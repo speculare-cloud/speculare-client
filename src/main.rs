@@ -50,4 +50,12 @@ fn main() {
         .output()
         .expect("failed to execute process");
     println!("Users: {}", String::from_utf8_lossy(&logged_users.stdout));
+
+    // Get the mac address - only valid for the iMac at 19 as they start by 78:
+    let mac_address = Command::new("bash")
+        .arg("-c")
+        .arg("ifconfig | grep 78: | awk -F' ' '{print $NF}' | tr -d '\n'")
+        .output()
+        .expect("failed to execute process");
+    println!("MAC: {}", String::from_utf8_lossy(&mac_address.stdout));
 }

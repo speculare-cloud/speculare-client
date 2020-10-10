@@ -1,23 +1,15 @@
 extern crate sys_info;
 extern crate sysinfo;
 
+mod models;
+
+use crate::models::*;
+
 use std::process::Command;
-
 use sys_info::hostname;
-
+use std::error::Error;
 use sysinfo::ComponentExt;
 use sysinfo::{ProcessorExt, System, SystemExt};
-
-/* Get uptime of the computer in a special format */
-fn get_uptime(sys: &System) -> String {
-    let mut uptime = sys.get_uptime();
-    let days = uptime / 86400;
-    uptime -= days * 86400;
-    let hours = uptime / 3600;
-    uptime -= hours * 3600;
-    let minutes = uptime / 60;
-    return format!("{} days {} hours {} minutes", days, hours, minutes);
-}
 
 /* Retrieve the MAC address using the prefix as target [78: for 19's iMac] */
 fn get_mac_address(prefix: String) -> String {
@@ -46,43 +38,64 @@ fn get_logged_user() -> String {
     };
 }
 
-fn main() {
-    let sys = System::new_all();
-
-    let os_release = os_version::detect().unwrap();
-    println!("os: {}", os_release.to_string());
-
-    let hostname = hostname().unwrap();
-    println!("hostname: {}", hostname);
-    
-    let uptime = get_uptime(&sys);
-    println!("{}", uptime);
-    
-    let uuid = machine_uid::get().unwrap();
-    println!("uuid {}", uuid);
-    
-    println!(
-        "Memory: {}/{} MB",
-        sys.get_used_memory() / 1000,
-        sys.get_total_memory() / 1000
-    );
-
-    println!(
-        "CPU : {} MHz, {} %",
-        sys.get_processors()[0].get_frequency(),
-        sys.get_global_processor_info().get_cpu_usage()
-    );
-
-    for component in sys.get_components() {
-        println!(
-            "{}: {}°C",
-            component.get_label(),
-            component.get_temperature()
-        );
+/* Get the os version (Mac/Linux/Windows) in a safe String */
+fn get_os_version() -> String {
+    let os_release = os_version::detect();
+    return match os_release {
+        Ok(val) => val.to_string(),
+        Err(x) => x.to_string()
     }
-    let logged_users = get_logged_user();
-    println!("Users: {}", logged_users);
-    
-    let mac_address = get_mac_address("48:".to_string());
-    println!("MAC: {}", mac_address);
+}
+
+/* Get the hostname (Mac/Linux/Windows) in a safe String */
+fn get_hostname() -> String {
+    return match hostname() {
+        Ok(val) => val.to_string(),
+        Err(x) => x.to_string()
+    }
+}
+
+/* Get the uuid of the host (Mac/Linux/Windows) in a safe String */
+fn get_uuid() -> String {
+    return match machine_uid::get() {
+        Ok(val) => val.to_string(),
+        Err(x) => x.to_string()
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let sys = System::new_all();
+    let components = sys.get_components();
+    let mut sensors: Vec<Sensors> = Vec::with_capacity(components.len());
+    for component in components {
+        sensors.push(Sensors {
+            label: component.get_label().to_string(),
+            temp: component.get_temperature(),
+        })
+    }
+
+    // TODO - Replace the 48: in a env file
+    let data = Data {
+        os: get_os_version(),
+        hostname: get_hostname(),
+        uptime: sys.get_uptime(),
+        uuid: get_uuid(),
+        cpu_freq: sys.get_processors()[0].get_frequency(),
+        user: get_logged_user(),
+        sensors: sensors,
+        mac_address: get_mac_address("48:".to_string()),
+    };
+
+    let client = reqwest::Client::new();
+    // TODO - Change the URL in a env file
+    let res = client
+        .post("https://enmy1ryyhupko.x.pipedream.net")
+        .json(&data)
+        .send()
+        .await?;
+
+    // TODO - Save log to the syslog server
+    println!("Return code [{}]", res.status());
+    Ok(())
 }

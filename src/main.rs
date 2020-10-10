@@ -3,11 +3,10 @@ extern crate sysinfo;
 
 use std::process::Command;
 
-use sys_info::{hostname, os_release};
+use sys_info::hostname;
 
 use sysinfo::{ProcessorExt, System, SystemExt};
 use sysinfo::ComponentExt;
-use regex::Regex;
 
 fn get_uptime(sys: &System) -> String {
     let mut uptime = sys.get_uptime();
@@ -23,11 +22,11 @@ fn main() {
     let sys = System::new_all();
 
     let hostname = hostname().unwrap();
-    let os_release = os_release().unwrap();
+    let os_release = os_version::detect().unwrap();
 
     let uuid = machine_uid::get().unwrap();
 
-    println!("os: {}", os_release);
+    println!("os: {}", os_release.to_string());
     println!("hostname: {}", hostname);
     println!("{}", get_uptime(&sys));
     println!("uuid {}", uuid);
@@ -51,15 +50,4 @@ fn main() {
         .output()
         .expect("failed to execute process");
     println!("Users: {}", String::from_utf8_lossy(&logged_users.stdout));
-
-    let last_reboot = Command::new("bash")
-        .arg("-c")
-        .arg("last reboot")
-        .output()
-        .expect("failed to execute process");
-    let re = Regex::new(r"[a-zA-Z]{3}\\s{1}[a-zA-Z]{3}\\s{1,2}\\d{1,2}\\s{1}\\d{2}\\:\\d{2}").unwrap();
-    let tx = String::from_utf8_lossy(&last_reboot.stdout);
-    for mat in re.find_iter(&tx) {
-        println!("Reboot : {:?}", mat);
-    }
 }

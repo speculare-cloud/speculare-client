@@ -27,12 +27,14 @@ use sysinfo::{ProcessorExt, System, SystemExt};
 struct Global {
     mthread: Option<thread::JoinHandle<()>>,
     alive: sync::Arc<AtomicBool>,
+    skip: sync::Arc<AtomicBool>
 }
 
 lazy_static! {
     static ref G_INFO: Mutex<Global> = Mutex::new(Global {
         mthread: None,
-        alive: sync::Arc::new(AtomicBool::new(false))
+        alive: sync::Arc::new(AtomicBool::new(false)),
+        skip: sync::Arc::new(AtomicBool::new(false))
     });
 }
 
@@ -40,22 +42,33 @@ impl Global {
     fn start(&mut self, interval: Option<u64>) {
         self.alive.store(true, Ordering::SeqCst);
         let alive = self.alive.clone();
+        let skip = self.skip.clone();
 
         let interval = if interval.is_some() {
             interval.unwrap()
         } else {
-            300 // 5 default is 5 mins
+            300 // 300 default is 5 mins
         };
 
         self.mthread = Some(thread::spawn(move || {
             while alive.load(Ordering::SeqCst) {
-                match collect_and_send() {
-                    Ok(x) => x,
-                    Err(x) => syslog(x.to_string(), false),
-                };
+                if !skip.load(Ordering::SeqCst) {
+                    match collect_and_send() {
+                        Ok(x) => x,
+                        Err(x) => syslog(x.to_string(), false),
+                    };
+                }
                 thread::sleep(Duration::from_secs(interval));
             }
         }));
+    }
+
+    fn burst_on(&mut self) {
+        self.skip.store(true, Ordering::SeqCst);
+    }
+
+    fn burst_off(&mut self) {
+        self.skip.store(false, Ordering::SeqCst);
     }
 
     fn stop(&mut self) {
@@ -258,5 +271,6 @@ fn main() {
      */
     loop {
         thread::sleep(Duration::from_millis(10000));
+        G_INFO.lock().unwrap().burst_on()
     }
 }

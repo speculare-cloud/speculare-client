@@ -1,3 +1,4 @@
+extern crate reqwest;
 extern crate sys_info;
 extern crate sysinfo;
 
@@ -10,6 +11,17 @@ use std::process::Command;
 use sys_info::hostname;
 use sysinfo::ComponentExt;
 use sysinfo::{ProcessorExt, System, SystemExt};
+
+/* Will only succed on iMac - send message and panic if needed */
+fn syslog(message: String, fail: bool) {
+    Command::new("bash").arg("-c").arg(format!(
+        "/bin/syslog.py {}",
+        format!("[SPECULARE] - {}", message)
+    ));
+    if fail {
+        panic!(message);
+    }
+}
 
 /*
  *  MAC - linux specific get_mac_address
@@ -32,7 +44,10 @@ fn get_mac_address() -> String {
         .output();
     return match mac_address {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
-        Err(x) => x.to_string(),
+        Err(x) => {
+            syslog(x.to_string(), false);
+            x.to_string()
+        }
     };
 }
 
@@ -57,7 +72,10 @@ fn get_mac_address() -> String {
         .output();
     return match mac_address {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
-        Err(x) => x.to_string(),
+        Err(x) => {
+            syslog(x.to_string(), false);
+            x.to_string()
+        }
     };
 }
 
@@ -69,7 +87,10 @@ fn get_logged_user() -> String {
         .output();
     return match logged_users {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
-        Err(x) => x.to_string(),
+        Err(x) => {
+            syslog(x.to_string(), false);
+            x.to_string()
+        }
     };
 }
 
@@ -78,7 +99,10 @@ fn get_os_version() -> String {
     let os_release = os_version::detect();
     return match os_release {
         Ok(val) => val.to_string(),
-        Err(x) => x.to_string(),
+        Err(x) => {
+            syslog(x.to_string(), false);
+            x.to_string()
+        }
     };
 }
 
@@ -86,7 +110,10 @@ fn get_os_version() -> String {
 fn get_hostname() -> String {
     return match hostname() {
         Ok(val) => val.to_string(),
-        Err(x) => x.to_string(),
+        Err(x) => {
+            syslog(x.to_string(), false);
+            x.to_string()
+        }
     };
 }
 
@@ -94,13 +121,21 @@ fn get_hostname() -> String {
 fn get_uuid() -> String {
     return match machine_uid::get() {
         Ok(val) => val.to_string(),
-        Err(x) => x.to_string(),
+        Err(x) => {
+            syslog(x.to_string(), false);
+            x.to_string()
+        }
     };
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    dotenv::from_path("/etc/speculare.config").unwrap_or_else(|_error| {
+        syslog("failed to load /etc/speculare.config".to_string(), true);
+    });
+
     let sys = System::new_all();
+
     let components = sys.get_components();
     let mut sensors: Vec<Sensors> = Vec::with_capacity(components.len());
     for component in components {
@@ -121,15 +156,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
         mac_address: get_mac_address(),
     };
 
-    let client = reqwest::Client::new();
-    // TODO - Change the URL in a env file
-    let res = client
-        .post("https://enj6lyfuy1r7g.x.pipedream.net")
+    let mut url: String = String::new();
+    match std::env::var("api_url") {
+        Ok(val) => url.push_str(&val),
+        Err(x) => {
+            syslog(x.to_string(), true);
+        }
+    };
+
+    let mut token: String = String::new();
+    match std::env::var("api_token") {
+        Ok(val) => token.push_str(&val),
+        Err(x) => {
+            syslog(x.to_string(), true);
+        }
+    };
+
+    let res = reqwest::Client::new()
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", token))
         .json(&data)
         .send()
         .await?;
 
-    // TODO - Save log to the syslog server
     println!("Return code [{}]", res.status());
+    syslog(format!("return code [{}]", res.status()), false);
     Ok(())
 }

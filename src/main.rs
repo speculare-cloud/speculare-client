@@ -9,14 +9,16 @@ mod models;
 
 use crate::models::*;
 
-use std::error::Error;
-use std::process::Command;
-use std::sync;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
 use std::{
+    error::Error,
+    process::Command,
+    sync,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex,
+    },
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 use sys_info::hostname;
 use sysinfo::ComponentExt;
@@ -42,13 +44,16 @@ impl Global {
         let interval = if interval.is_some() {
             interval.unwrap()
         } else {
-            1000
+            300 // 5 default is 5 mins
         };
 
         self.mthread = Some(thread::spawn(move || {
             while alive.load(Ordering::SeqCst) {
-                println!("Hello World");
-                thread::sleep(Duration::from_millis(interval));
+                match collect_and_send() {
+                    Ok(x) => x,
+                    Err(x) => syslog(x.to_string(), false),
+                };
+                thread::sleep(Duration::from_secs(interval));
             }
         }));
     }
@@ -179,28 +184,8 @@ fn get_uuid() -> String {
     };
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    
-    let mut data = G_INFO.lock().unwrap();
-    data.start(None);
-    drop(data);
-
-    let mut x: u16 = 0;
-    loop {
-        if x == 5 {
-            G_INFO.lock().unwrap().stop();
-            G_INFO.lock().unwrap().start(Some(100));
-        }
-        thread::sleep(Duration::from_millis(1000));
-        x += 1;
-    }
-
-    /*
-    dotenv::from_path("/etc/speculare.config").unwrap_or_else(|_error| {
-        syslog("failed to load /etc/speculare.config".to_string(), true);
-    });
-
+fn collect_and_send() -> Result<(), Box<dyn Error>> {
+    syslog("collecting info...".to_string(), false);
     let sys = System::new_all();
 
     let components = sys.get_components();
@@ -222,6 +207,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         sensors: sensors,
         mac_address: get_mac_address(),
     };
+    syslog("got all the data needed...".to_string(), false);
 
     let mut url: String = String::new();
     match std::env::var("api_url") {
@@ -239,15 +225,38 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    let res = reqwest::Client::new()
+    let res = reqwest::blocking::Client::new()
         .post(&url)
         .header("Authorization", format!("Bearer {}", token))
         .json(&data)
-        .send()
-        .await?;
+        .send()?;
 
     println!("Return code [{}]", res.status());
     syslog(format!("return code [{}]", res.status()), false);
     Ok(())
-    */
+}
+
+fn main() {
+    dotenv::from_path("/etc/speculare.config").unwrap_or_else(|_error| {
+        syslog("failed to load /etc/speculare.config".to_string(), true);
+    });
+
+    {
+        /*
+         *  The mutex 'data' will be dropped
+         *  once outside of the scope, so no need
+         *  to drop it manually
+         */
+        G_INFO.lock().unwrap().start(None);
+    }
+
+    /*
+     *  Start an actix web server instead
+     *  The actix web server will recieve order from the
+     *  master server to run in burst mode for a certain time.
+     *  But burst mode we call it sending info more than once every 5min.
+     */
+    loop {
+        thread::sleep(Duration::from_millis(10000));
+    }
 }

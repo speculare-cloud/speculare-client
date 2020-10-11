@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 extern crate reqwest;
 extern crate sys_info;
 extern crate sysinfo;
@@ -8,9 +11,57 @@ use crate::models::*;
 
 use std::error::Error;
 use std::process::Command;
+use std::sync;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
+use std::{
+    thread,
+    time::{Duration, Instant},
+};
 use sys_info::hostname;
 use sysinfo::ComponentExt;
 use sysinfo::{ProcessorExt, System, SystemExt};
+
+struct Global {
+    mthread: Option<thread::JoinHandle<()>>,
+    alive: sync::Arc<AtomicBool>,
+}
+
+lazy_static! {
+    static ref G_INFO: Mutex<Global> = Mutex::new(Global {
+        mthread: None,
+        alive: sync::Arc::new(AtomicBool::new(false))
+    });
+}
+
+impl Global {
+    fn start(&mut self, interval: Option<u64>) {
+        self.alive.store(true, Ordering::SeqCst);
+        let alive = self.alive.clone();
+
+        let interval = if interval.is_some() {
+            interval.unwrap()
+        } else {
+            1000
+        };
+
+        self.mthread = Some(thread::spawn(move || {
+            while alive.load(Ordering::SeqCst) {
+                println!("Hello World");
+                thread::sleep(Duration::from_millis(interval));
+            }
+        }));
+    }
+
+    fn stop(&mut self) {
+        self.alive.store(false, Ordering::SeqCst);
+        self.mthread
+            .take()
+            .expect("Called stop on non-running thread")
+            .join()
+            .expect("Could not join spawned thread");
+    }
+}
 
 /* Will only succed on iMac - send message and panic if needed */
 fn syslog(message: String, fail: bool) {
@@ -130,6 +181,22 @@ fn get_uuid() -> String {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    
+    let mut data = G_INFO.lock().unwrap();
+    data.start(None);
+    drop(data);
+
+    let mut x: u16 = 0;
+    loop {
+        if x == 5 {
+            G_INFO.lock().unwrap().stop();
+            G_INFO.lock().unwrap().start(Some(100));
+        }
+        thread::sleep(Duration::from_millis(1000));
+        x += 1;
+    }
+
+    /*
     dotenv::from_path("/etc/speculare.config").unwrap_or_else(|_error| {
         syslog("failed to load /etc/speculare.config".to_string(), true);
     });
@@ -182,4 +249,5 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Return code [{}]", res.status());
     syslog(format!("return code [{}]", res.status()), false);
     Ok(())
+    */
 }

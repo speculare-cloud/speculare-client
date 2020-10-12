@@ -20,6 +20,7 @@ use std::{
     thread,
     time::Duration,
 };
+use log::{info, warn};
 use sys_info::hostname;
 use sysinfo::ComponentExt;
 use sysinfo::{ProcessorExt, System, SystemExt};
@@ -55,7 +56,7 @@ impl Global {
                 if !skip.load(Ordering::SeqCst) {
                     match collect_and_send() {
                         Ok(x) => x,
-                        Err(x) => syslog(x.to_string(), false),
+                        Err(x) => syslog(x.to_string(), false, true),
                     };
                 }
                 thread::sleep(Duration::from_secs(interval));
@@ -82,11 +83,16 @@ impl Global {
 }
 
 /* Will only succed on iMac - send message and panic if needed */
-fn syslog(message: String, fail: bool) {
+fn syslog(message: String, fail: bool, warn: bool) {
     Command::new("bash").arg("-c").arg(format!(
         "/bin/syslog.py {}",
         format!("[SPECULARE] - {}", message)
     ));
+    if warn {
+        warn!("{}", message);
+    } else {
+        info!("{}", message);
+    }
     if fail {
         panic!(message);
     }
@@ -142,7 +148,7 @@ fn get_mac_address() -> String {
     return match mac_address {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
         Err(x) => {
-            syslog(x.to_string(), false);
+            syslog(x.to_string(), false, true);
             x.to_string()
         }
     };
@@ -157,7 +163,7 @@ fn get_logged_user() -> String {
     return match logged_users {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
         Err(x) => {
-            syslog(x.to_string(), false);
+            syslog(x.to_string(), false, true);
             x.to_string()
         }
     };
@@ -169,7 +175,7 @@ fn get_os_version() -> String {
     return match os_release {
         Ok(val) => val.to_string(),
         Err(x) => {
-            syslog(x.to_string(), false);
+            syslog(x.to_string(), false, true);
             x.to_string()
         }
     };
@@ -180,7 +186,7 @@ fn get_hostname() -> String {
     return match hostname() {
         Ok(val) => val.to_string(),
         Err(x) => {
-            syslog(x.to_string(), false);
+            syslog(x.to_string(), false, true);
             x.to_string()
         }
     };
@@ -191,14 +197,14 @@ fn get_uuid() -> String {
     return match machine_uid::get() {
         Ok(val) => val.to_string(),
         Err(x) => {
-            syslog(x.to_string(), false);
+            syslog(x.to_string(), false, true);
             x.to_string()
         }
     };
 }
 
 fn collect_and_send() -> Result<(), Box<dyn Error>> {
-    syslog("collecting info...".to_string(), false);
+    syslog("collecting info...".to_string(), false, false);
     let sys = System::new_all();
 
     let components = sys.get_components();
@@ -220,13 +226,13 @@ fn collect_and_send() -> Result<(), Box<dyn Error>> {
         sensors: sensors,
         mac_address: get_mac_address(),
     };
-    syslog("got all the data needed...".to_string(), false);
+    syslog("got all the data needed...".to_string(), false, false);
 
     let mut url: String = String::new();
     match std::env::var("api_url") {
         Ok(val) => url.push_str(&val),
         Err(x) => {
-            syslog(x.to_string(), true);
+            syslog(x.to_string(), true, true);
         }
     };
 
@@ -234,28 +240,35 @@ fn collect_and_send() -> Result<(), Box<dyn Error>> {
     match std::env::var("api_token") {
         Ok(val) => token.push_str(&val),
         Err(x) => {
-            syslog(x.to_string(), true);
+            syslog(x.to_string(), true, true);
         }
     };
 
-    // Still having issue if the server is not reachable, this will be blocking indefinitely
-    let client = reqwest::blocking::Client::builder()
-        .timeout(Duration::from_secs(3))
+    let timeout = Duration::new(5, 0);
+    let client = reqwest::blocking::ClientBuilder::new()
+        .timeout(timeout)
+        .connect_timeout(timeout)
         .build()?;
 
     let res = client.post(&url)
         .header("Authorization", format!("Bearer {}", token))
         .json(&data)
-        .send()?;
+        .send();
 
-    println!("Return code [{}]", res.status());
-    syslog(format!("return code [{}]", res.status()), false);
+    match res {
+        Ok(res) => info!("return status : {}", res.status()),
+        Err(x) => {
+            syslog(format!("calling error : {}", x), false, true);
+        }
+    }
     Ok(())
 }
 
 fn main() {
+    std::env::set_var("RUST_LOG", "info");
+    env_logger::init();
     dotenv::from_path("/etc/speculare.config").unwrap_or_else(|_error| {
-        syslog("failed to load /etc/speculare.config".to_string(), true);
+        syslog("failed to load /etc/speculare.config".to_string(), true, true);
     });
 
     {

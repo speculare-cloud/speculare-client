@@ -10,11 +10,12 @@ use log::info;
 use std::{error::Error, time::Duration};
 use sysinfo::{ProcessorExt, System, SystemExt};
 
+// TODO
+// Cut this function is some small relevant function
+// Comment it
 pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
     syslog("collecting info...".to_string(), false, false);
     let sys = System::new_all();
-
-    let sensors: Vec<Sensors> = get_senors_data(&sys);
 
     let data = Data {
         os: get_os_version(),
@@ -23,7 +24,7 @@ pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
         uuid: get_uuid(),
         cpu_freq: sys.get_processors()[0].get_frequency(),
         user: get_logged_user(),
-        sensors: sensors,
+        sensors: get_senors_data(sys),
         mac_address: get_mac_address(),
     };
     syslog("got all the data needed...".to_string(), false, false);

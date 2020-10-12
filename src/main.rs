@@ -60,6 +60,6 @@ fn main() {
      */
     loop {
         thread::sleep(Duration::from_millis(10000));
-        // G_INFO.lock().unwrap().burst_on()
+        /* G_INFO.lock().unwrap().burst_on() */
     }
 }

@@ -27,13 +27,13 @@ pub fn get_mac_address() -> String {
             "'{print $2}'"
         ))
         .output();
-    return match mac_address {
+    match mac_address {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
         Err(x) => {
             syslog(x.to_string(), false);
             x.to_string()
         }
-    };
+    }
 }
 
 /*
@@ -55,13 +55,13 @@ pub fn get_mac_address() -> String {
             "'{print $2}'"
         ))
         .output();
-    return match mac_address {
+    match mac_address {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
         Err(x) => {
             syslog(x.to_string(), false, true);
             x.to_string()
         }
-    };
+    }
 }
 
 /* Get the user currently logged, if more than 1 user, return the last one */
@@ -70,51 +70,51 @@ pub fn get_logged_user() -> String {
         .arg("-c")
         .arg("users | awk -F' ' '{print $NF}' | tr -d '\n'")
         .output();
-    return match logged_users {
+    match logged_users {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
         Err(x) => {
             syslog(x.to_string(), false, true);
             x.to_string()
         }
-    };
+    }
 }
 
 /* Get the os version (Mac/Linux/Windows) in a safe String */
 pub fn get_os_version() -> String {
     let os_release = os_version::detect();
-    return match os_release {
+    match os_release {
         Ok(val) => val.to_string(),
         Err(x) => {
             syslog(x.to_string(), false, true);
             x.to_string()
         }
-    };
+    }
 }
 
 /* Get the hostname (Mac/Linux/Windows) in a safe String */
 pub fn get_hostname() -> String {
-    return match hostname() {
-        Ok(val) => val.to_string(),
+    match hostname() {
+        Ok(val) => val,
         Err(x) => {
             syslog(x.to_string(), false, true);
             x.to_string()
         }
-    };
+    }
 }
 
 /* Get the uuid of the host (Mac/Linux/Windows) in a safe String */
 pub fn get_uuid() -> String {
-    return match machine_uid::get() {
-        Ok(val) => val.to_string(),
+    match machine_uid::get() {
+        Ok(val) => val,
         Err(x) => {
             syslog(x.to_string(), false, true);
             x.to_string()
         }
-    };
+    }
 }
 
 /* Retrieve sensors data in form of vector */
-pub fn get_senors_data(sys: &System) -> Vec<Sensors> {
+pub fn get_senors_data(sys: System) -> Vec<Sensors> {
     let components = sys.get_components();
     let mut sensors: Vec<Sensors> = Vec::with_capacity(components.len());
     for component in components {
@@ -123,5 +123,5 @@ pub fn get_senors_data(sys: &System) -> Vec<Sensors> {
             temp: component.get_temperature(),
         })
     }
-    return sensors;
+    sensors
 }

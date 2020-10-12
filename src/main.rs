@@ -238,8 +238,12 @@ fn collect_and_send() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    let res = reqwest::blocking::Client::new()
-        .post(&url)
+    // Still having issue if the server is not reachable, this will be blocking indefinitely
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(3))
+        .build()?;
+
+    let res = client.post(&url)
         .header("Authorization", format!("Bearer {}", token))
         .json(&data)
         .send()?;
@@ -271,6 +275,6 @@ fn main() {
      */
     loop {
         thread::sleep(Duration::from_millis(10000));
-        G_INFO.lock().unwrap().burst_on()
+        // G_INFO.lock().unwrap().burst_on()
     }
 }

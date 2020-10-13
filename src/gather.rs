@@ -120,7 +120,7 @@ pub fn get_senors_data(sys: System) -> Vec<Sensors> {
     for component in components {
         sensors.push(Sensors {
             label: component.get_label().to_string(),
-            temp: component.get_temperature(),
+            temp: f64::from(component.get_temperature()),
         })
     }
     sensors

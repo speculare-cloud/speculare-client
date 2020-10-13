@@ -20,9 +20,9 @@ pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
     let data = Data {
         os: get_os_version(),
         hostname: get_hostname(),
-        uptime: sys.get_uptime(),
+        uptime: sys.get_uptime() as i64,
         uuid: get_uuid(),
-        cpu_freq: sys.get_processors()[0].get_frequency(),
+        cpu_freq: sys.get_processors()[0].get_frequency() as i64,
         user: get_logged_user(),
         sensors: get_senors_data(sys),
         mac_address: get_mac_address(),

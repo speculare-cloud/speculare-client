@@ -18,6 +18,14 @@ pub struct Sensors {
 }
 
 #[derive(Serialize)]
+pub struct Disks {
+    pub name: String,
+    pub mount_point: String,
+    pub total_space: i64,
+    pub avail_space: i64
+}
+
+#[derive(Serialize)]
 pub struct Data {
     pub os: String,
     pub hostname: String,
@@ -25,6 +33,7 @@ pub struct Data {
     pub uuid: String,
     pub cpu_freq: i64,
     pub sensors: Vec<Sensors>,
+    pub disks: Vec<Disks>,
     pub user: String,
     pub mac_address: String,
 }

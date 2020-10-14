@@ -24,9 +24,11 @@ pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
         uuid: get_uuid(),
         cpu_freq: sys.get_processors()[0].get_frequency() as i64,
         user: get_logged_user(),
-        sensors: get_senors_data(sys),
+        sensors: get_senors_data(&sys),
+        disks: get_disks_data(&sys),
         mac_address: get_mac_address(),
     };
+
     syslog("got all the data needed...".to_string(), false, false);
 
     let mut url: String = String::new();

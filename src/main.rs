@@ -10,7 +10,9 @@ mod models;
 mod process;
 mod utils;
 
+use gather::get_disks_data;
 use models::*;
+use sysinfo::SystemExt;
 use utils::syslog;
 
 use std::{
@@ -42,6 +44,11 @@ fn main() {
     });
 
     env_logger::init();
+
+    let system = sysinfo::System::new_all();
+    get_disks_data(&system);
+
+    return;
 
     {
         /*

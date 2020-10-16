@@ -31,7 +31,7 @@ pub fn get_mac_address() -> String {
     match mac_address {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
         Err(x) => {
-            syslog(x.to_string(), false);
+            syslog(x.to_string(), false, true);
             x.to_string()
         }
     }

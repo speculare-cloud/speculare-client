@@ -14,7 +14,6 @@ use sysinfo::{ProcessorExt, System, SystemExt};
 // Cut this function is some small relevant function
 // Comment it
 pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
-    syslog("collecting info...".to_string(), false, false);
     let sys = System::new_all();
 
     let data = Data {
@@ -30,13 +29,11 @@ pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
         mac_address: get_mac_address(),
     };
 
-    syslog("got all the data needed...".to_string(), false, false);
-
     let mut url: String = String::new();
     match std::env::var("api_url") {
         Ok(val) => url.push_str(&val),
         Err(x) => {
-            syslog(x.to_string(), true, true);
+            syslog(x.to_string(), true, true, false);
         }
     };
 
@@ -44,7 +41,7 @@ pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
     match std::env::var("api_token") {
         Ok(val) => token.push_str(&val),
         Err(x) => {
-            syslog(x.to_string(), true, true);
+            syslog(x.to_string(), true, true, false);
         }
     };
 
@@ -63,7 +60,8 @@ pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
     match res {
         Ok(res) => info!("return status : {}", res.status()),
         Err(x) => {
-            syslog(format!("calling error : {}", x), false, true);
+            sentry::capture_error(&x);
+            syslog(format!("calling error : {}", x), false, true, false);
         }
     }
     Ok(())

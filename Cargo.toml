@@ -12,6 +12,7 @@ os-version = "0.1.1"
 env_logger = "0.7.1"
 sys-info = "0.7.0"
 sysinfo = "0.15.3"
+sentry = { version = "0.20.1", features = ["anyhow"] }
 dotenv = "0.15.0"
 log = "0.4.0"
 lazy_static = "1.4.0"

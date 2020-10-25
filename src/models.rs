@@ -79,7 +79,7 @@ impl Global {
                 if !skip.load(Ordering::SeqCst) {
                     match collect_and_send() {
                         Ok(x) => x,
-                        Err(x) => syslog(x.to_string(), false, true),
+                        Err(x) => syslog(x.to_string(), false, true, true),
                     };
                 }
                 /*

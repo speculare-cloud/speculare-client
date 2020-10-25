@@ -31,6 +31,7 @@ lazy_static! {
 fn main() {
     /* Define log as info during development time */
     std::env::set_var("RUST_LOG", "info");
+    env_logger::init();
 
     /* Load the config into the env to use accross the prog */
     dotenv::from_path("/etc/speculare.config").unwrap_or_else(|_error| {
@@ -38,10 +39,12 @@ fn main() {
             "failed to load /etc/speculare.config".to_string(),
             true,
             true,
+            false,
         );
     });
 
-    env_logger::init();
+    // Define the sentry guard
+    let _guard = sentry::init(std::env::var("sentry_endpoint").expect("missing sentry endpoint"));
 
     {
         /*

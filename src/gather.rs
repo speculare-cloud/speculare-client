@@ -3,6 +3,7 @@ use crate::sysinfo::DiskExt;
 use crate::utils;
 
 use models::{Disks, LoadAvg, Sensors};
+use sentry::integrations::anyhow::capture_anyhow;
 use std::process::Command;
 use sys_info::hostname;
 use sysinfo::{ComponentExt, System, SystemExt};
@@ -30,7 +31,8 @@ pub fn get_mac_address() -> String {
     match mac_address {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
         Err(x) => {
-            syslog(x.to_string(), false, true);
+            sentry::capture_error(&x);
+            syslog(x.to_string(), false, true, false);
             x.to_string()
         }
     }
@@ -58,7 +60,8 @@ pub fn get_mac_address() -> String {
     match mac_address {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
         Err(x) => {
-            syslog(x.to_string(), false, true);
+            sentry::capture_error(&x);
+            syslog(x.to_string(), false, true, false);
             x.to_string()
         }
     }
@@ -73,7 +76,8 @@ pub fn get_logged_user() -> String {
     match logged_users {
         Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
         Err(x) => {
-            syslog(x.to_string(), false, true);
+            sentry::capture_error(&x);
+            syslog(x.to_string(), false, true, false);
             x.to_string()
         }
     }
@@ -85,7 +89,8 @@ pub fn get_os_version() -> String {
     match os_release {
         Ok(val) => val.to_string(),
         Err(x) => {
-            syslog(x.to_string(), false, true);
+            capture_anyhow(&x);
+            syslog(x.to_string(), false, true, false);
             x.to_string()
         }
     }
@@ -96,7 +101,8 @@ pub fn get_hostname() -> String {
     match hostname() {
         Ok(val) => val,
         Err(x) => {
-            syslog(x.to_string(), false, true);
+            sentry::capture_error(&x);
+            syslog(x.to_string(), false, true, false);
             x.to_string()
         }
     }
@@ -107,7 +113,7 @@ pub fn get_uuid() -> String {
     match machine_uid::get() {
         Ok(val) => val,
         Err(x) => {
-            syslog(x.to_string(), false, true);
+            syslog(x.to_string(), false, true, true);
             x.to_string()
         }
     }

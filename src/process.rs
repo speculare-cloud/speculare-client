@@ -23,6 +23,7 @@ pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
         uptime: sys.get_uptime() as i64,
         uuid: get_uuid(),
         cpu_freq: sys.get_processors()[0].get_frequency() as i64,
+        load_avg: get_avg_load(&sys),
         user: get_logged_user(),
         sensors: get_senors_data(&sys),
         disks: get_disks_data(&sys),

@@ -22,7 +22,14 @@ pub struct Disks {
     pub name: String,
     pub mount_point: String,
     pub total_space: i64,
-    pub avail_space: i64
+    pub avail_space: i64,
+}
+
+#[derive(Serialize)]
+pub struct LoadAvg {
+    pub one: f64,
+    pub five: f64,
+    pub fifteen: f64,
 }
 
 #[derive(Serialize)]
@@ -32,6 +39,7 @@ pub struct Data {
     pub uptime: i64,
     pub uuid: String,
     pub cpu_freq: i64,
+    pub load_avg: LoadAvg,
     pub sensors: Vec<Sensors>,
     pub disks: Vec<Disks>,
     pub user: String,
@@ -97,7 +105,7 @@ impl Global {
 
     /*
      *  Stop the thread by setting the atomic bool to false
-     *  joining the thread and o stopping it asap (might take up to interval time)
+     *  joining the thread and stopping it asap (might take up to interval time)
      */
     pub fn stop(&mut self) {
         self.alive.store(false, Ordering::SeqCst);

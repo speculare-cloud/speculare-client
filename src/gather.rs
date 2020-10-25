@@ -2,11 +2,10 @@ use crate::models;
 use crate::sysinfo::DiskExt;
 use crate::utils;
 
-use models::{Sensors, Disks};
+use models::{Disks, LoadAvg, Sensors};
 use std::process::Command;
 use sys_info::hostname;
-use sysinfo::ComponentExt;
-use sysinfo::{System, SystemExt};
+use sysinfo::{ComponentExt, System, SystemExt};
 use utils::syslog;
 
 /*
@@ -133,11 +132,21 @@ pub fn get_disks_data(sys: &System) -> Vec<Disks> {
     let mut vdisks: Vec<Disks> = Vec::with_capacity(disks.len());
     for disk in disks {
         vdisks.push(Disks {
-            name:disk.get_name().to_str().unwrap_or("?").to_string(),
-            mount_point:disk.get_mount_point().display().to_string(),
+            name: disk.get_name().to_str().unwrap_or("?").to_string(),
+            mount_point: disk.get_mount_point().display().to_string(),
             total_space: (disk.get_total_space() / 100000) as i64,
             avail_space: (disk.get_available_space() / 100000) as i64,
         })
     }
     vdisks
+}
+
+/* Return the avg load of the system in 1,5,15min */
+pub fn get_avg_load(sys: &System) -> LoadAvg {
+    let load_avg = sys.get_load_average();
+    LoadAvg {
+        one: load_avg.one,
+        five: load_avg.five,
+        fifteen: load_avg.fifteen,
+    }
 }

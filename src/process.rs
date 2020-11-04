@@ -45,7 +45,7 @@ pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    let timeout = Duration::new(5, 0);
+    let timeout = Duration::new(15, 0);
     let client = reqwest::blocking::ClientBuilder::new()
         .timeout(timeout)
         .connect_timeout(timeout)

@@ -5,7 +5,7 @@ use crate::utils;
 use models::{Disks, LoadAvg, Sensors};
 use sentry::integrations::anyhow::capture_anyhow;
 use std::process::Command;
-use sysinfo::{ComponentExt, ProcessorExt, System, SystemExt};
+use sysinfo::{ComponentExt, System, SystemExt};
 use utils::syslog;
 
 /// Return the default interface on Linux
@@ -164,12 +164,9 @@ pub fn get_uptime(sys: &System) -> i64 {
 }
 
 /// Return the avg cpu_freq across all core as i64
-pub fn get_avg_cpufreq(sys: &System) -> i64 {
-    let mut cfm: i64 = 0;
-    let mut item = 1;
-    for cpu in sys.get_processors().iter() {
-        cfm += cpu.get_frequency() as i64;
-        item += 1;
+pub fn get_avg_cpufreq() -> i64 {
+    match cpuid::clock_frequency() {
+        Some(val) => val.into(),
+        None => 0,
     }
-    cfm / item
 }

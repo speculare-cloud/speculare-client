@@ -18,14 +18,8 @@ pub fn collect_and_send(sys: &mut System, client: &Client) -> Result<(), Box<dyn
         RefreshKind::new()
             .with_disks_list()
             .with_processes()
-            .with_components_list()
-            .with_cpu(),
+            .with_components_list(),
     );
-
-    let mcpuf: i64 = match cpuid::clock_frequency() {
-        Some(val) => val.into(),
-        None => 0,
-    };
 
     // Construct the Data structure with all the info needed
     let data = Data {
@@ -33,7 +27,7 @@ pub fn collect_and_send(sys: &mut System, client: &Client) -> Result<(), Box<dyn
         hostname: get_hostname(),
         uptime: get_uptime(&sys),
         uuid: get_uuid(),
-        cpu_freq: mcpuf,
+        cpu_freq: get_avg_cpufreq(),
         load_avg: get_avg_load(&sys),
         user: get_logged_user(),
         sensors: get_senors_data(&sys),

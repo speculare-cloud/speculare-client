@@ -98,14 +98,7 @@ pub fn get_os_version() -> String {
 /// Capture the error and send it to sentry + print it
 /// TODO - Should change the return value in case of an error
 pub fn get_hostname() -> String {
-    match hostname::get() {
-        Ok(val) => val.to_string_lossy().to_string(),
-        Err(x) => {
-            sentry::capture_error(&x);
-            syslog(x.to_string(), false, true, false);
-            x.to_string()
-        }
-    }
+    host::info().hostname().to_string()
 }
 
 /// Get the machine UUID (Mac/Linux/Windows) as a String

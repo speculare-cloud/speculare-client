@@ -1325,7 +1325,6 @@ dependencies = [
  "cpuid",
  "dotenv",
  "env_logger",
- "hostname",
  "lazy_static",
  "log",
  "mac_address",

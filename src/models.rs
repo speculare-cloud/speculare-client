@@ -22,15 +22,19 @@ pub struct LoadAvg {
 }
 
 #[derive(Serialize)]
-pub struct Data {
+pub struct StaticData {
+    pub uuid: String,
     pub os: String,
     pub hostname: String,
-    pub uptime: i64,
+    pub mac_address: String,
+}
+
+#[derive(Serialize)]
+pub struct DynData {
     pub uuid: String,
+    pub uptime: i64,
     pub cpu_freq: i64,
     pub load_avg: LoadAvg,
     pub sensors: Vec<Sensors>,
     pub disks: Vec<Disks>,
-    pub user: String,
-    pub mac_address: String,
 }

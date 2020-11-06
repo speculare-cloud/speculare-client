@@ -19,14 +19,7 @@ fn main() {
     env_logger::init();
 
     // Load the config into the env to use accross the prog
-    dotenv::from_path("/etc/speculare.config").unwrap_or_else(|_error| {
-        syslog(
-            "failed to load /etc/speculare.config".to_string(),
-            true,
-            true,
-            false,
-        );
-    });
+    dotenv::from_path("/etc/speculare.config").expect("Failed to load speculare.config");
 
     // Define the sentry guard
     let _guard = sentry::init(std::env::var("sentry_endpoint").expect("missing sentry endpoint"));
@@ -35,22 +28,21 @@ fn main() {
     // Do not create a new one each time
     let timeout = Duration::new(15, 0);
     // Create a single client instance for the app
-    let client = match reqwest::blocking::ClientBuilder::new()
+    let client = reqwest::blocking::ClientBuilder::new()
         .timeout(timeout)
         .connect_timeout(timeout)
         .build()
-    {
-        Ok(val) => val,
-        Err(x) => panic!(x),
-    };
+        .expect("Failed to create the blocking client");
+
+    // Prepare to send, get the url (where to send)
+    let url = std::env::var("api_url").expect("Missing api_url");
 
     // Start the app loop
     loop {
-        match collect_and_send(&client) {
+        match collect_and_send(&client, &url) {
             Ok(x) => x,
             Err(x) => syslog(x.to_string(), false, true, true),
         };
-
         // Sleep for the interval defined above
         // don't spam the CPU nor the server
         thread::sleep(Duration::from_secs(1));

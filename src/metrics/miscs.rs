@@ -2,26 +2,7 @@ use crate::utils;
 
 use psutil::host;
 use sentry::integrations::anyhow::capture_anyhow;
-use std::process::Command;
 use utils::syslog;
-
-/// Get the logged users and only keep the last/first one
-/// Will be updated to return a Vec<String> instead
-/// TODO - Should change the return value in case of an error
-pub fn get_logged_user() -> String {
-    let logged_users = Command::new("bash")
-        .arg("-c")
-        .arg("users | awk -F' ' '{print $NF}' | tr -d '\n'")
-        .output();
-    match logged_users {
-        Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
-        Err(x) => {
-            sentry::capture_error(&x);
-            syslog(x.to_string(), false, true, false);
-            x.to_string()
-        }
-    }
-}
 
 /// Get the os version (Mac/Linux/Windows) in a safe String
 /// Capture the error and send it to sentry + print it

@@ -25,6 +25,8 @@ pub fn collect_and_send(client: &Client, url: &String) -> Result<(), Box<dyn Err
     let res = client.post(url).json(&dyndata).send();
 
     // Analyze the output and log it + send to sentry in case of error
+    // TODO - Implement a status_code from the server to tell the client
+    // "Hey, I'm missing some of your infos, can you send me those ?"
     match res {
         Ok(res) => info!("return status : {}", res.status()),
         Err(x) => {

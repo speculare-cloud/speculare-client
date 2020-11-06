@@ -3,21 +3,20 @@ use crate::models;
 use crate::utils;
 
 use gather::*;
-use models::*;
-use utils::syslog;
-
 use log::info;
-use std::{error::Error, time::Duration};
+use models::*;
+use reqwest::blocking::Client;
+use std::error::Error;
 use sysinfo::{ProcessorExt, System, SystemExt};
+use utils::syslog;
 
 // TODO
 // Cut this function is some small relevant function
-// Comment it
-pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
-    // Gather System data
-    // TODO - Get the instance in global - static and refresh it
-    let sys = System::new_all();
+pub fn collect_and_send(sys: &mut System, client: &Client) -> Result<(), Box<dyn Error>> {
+    // Refresh data within the sys
+    sys.refresh_all();
 
+    // Construct the Data structure with all the info needed
     let data = Data {
         os: get_os_version(),
         hostname: get_hostname(),
@@ -49,14 +48,6 @@ pub fn collect_and_send() -> Result<(), Box<dyn Error>> {
             syslog(x.to_string(), true, true, false);
         }
     };
-
-    // Create the client
-    // TODO - Make it static and global - one client for the whole time
-    let timeout = Duration::new(15, 0);
-    let client = reqwest::blocking::ClientBuilder::new()
-        .timeout(timeout)
-        .connect_timeout(timeout)
-        .build()?;
 
     // Send the request
     let res = client

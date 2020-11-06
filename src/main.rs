@@ -22,10 +22,11 @@ lazy_static! {
     static ref G_INFO: Mutex<Global> = Mutex::new(Global {
         mthread: None,
         alive: sync::Arc::new(AtomicBool::new(false)),
-        skip: sync::Arc::new(AtomicBool::new(false))
     });
 }
 
+/// Main which start the process and loop indefinietly
+/// No other way to stop it than killing the process
 fn main() {
     // Define log as info during development time
     std::env::set_var("RUST_LOG", "info");

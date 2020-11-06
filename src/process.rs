@@ -1,10 +1,10 @@
-use crate::gather;
+use crate::metrics;
 use crate::models;
 use crate::utils;
 
-use gather::*;
 use log::info;
-use models::*;
+use metrics::{cpu::*, disks::*, miscs::*, network::*, sensors::*};
+use models::Data;
 use reqwest::blocking::Client;
 use std::error::Error;
 use utils::syslog;
@@ -20,7 +20,7 @@ pub fn collect_and_send(client: &Client) -> Result<(), Box<dyn Error>> {
         cpu_freq: get_avg_cpufreq(),
         load_avg: get_avg_load(),
         user: get_logged_user(),
-        sensors: get_senors_data(),
+        sensors: get_sensors_data(),
         disks: get_disks_data(),
         mac_address: get_mac_address(),
     };

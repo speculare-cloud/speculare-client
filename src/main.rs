@@ -2,7 +2,7 @@ extern crate cpuid;
 extern crate mac_address;
 extern crate reqwest;
 
-mod gather;
+mod metrics;
 mod models;
 mod process;
 mod utils;

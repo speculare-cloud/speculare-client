@@ -5,60 +5,39 @@ use crate::utils;
 use models::{Disks, LoadAvg, Sensors};
 use sentry::integrations::anyhow::capture_anyhow;
 use std::process::Command;
-use sys_info::hostname;
 use sysinfo::{ComponentExt, System, SystemExt};
 use utils::syslog;
 
-/*
- *  MAC - linux specific get_mac_address
- *  using default interface in a safe string
- */
+/// Return the default interface on Linux
 #[cfg(target_os = "linux")]
-pub fn get_mac_address() -> String {
+fn get_default_interface() -> String {
     let interface = Command::new("bash")
         .arg("-c")
         .arg("route | grep '^default' | grep -o '[^ ]*$' | sed '$!d' | tr -d '\n'")
         .output()
         .expect("failed to retrieve default interface");
-    let mac_address = Command::new("bash")
-        .arg("-c")
-        .arg(format!(
-            "ifconfig {} | grep 'ether ' | awk {} | tr -d '\n'",
-            String::from_utf8_lossy(&interface.stdout),
-            "'{print $2}'"
-        ))
-        .output();
-    match mac_address {
-        Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
-        Err(x) => {
-            sentry::capture_error(&x);
-            syslog(x.to_string(), false, true, false);
-            x.to_string()
-        }
-    }
+    String::from_utf8_lossy(&interface.stdout).to_string()
 }
 
-/*
- *  MAC - macos specific get_mac_address
- *  using default interface in a safe string
- */
+/// Return the default interface on MacOS
 #[cfg(target_os = "macos")]
-pub fn get_mac_address() -> String {
+fn get_default_interface() -> String {
     let interface = Command::new("bash")
         .arg("-c")
         .arg("route -n get default | grep 'interface:' | grep -o '[^ ]*$' | sed '$!d' | tr -d '\n'")
         .output()
         .expect("failed to retrieve default interface");
-    let mac_address = Command::new("bash")
-        .arg("-c")
-        .arg(format!(
-            "ifconfig {} | grep 'ether ' | awk {} | tr -d '\n'",
-            String::from_utf8_lossy(&interface.stdout),
-            "'{print $2}'"
-        ))
-        .output();
-    match mac_address {
-        Ok(val) => String::from_utf8_lossy(&val.stdout).to_string(),
+    String::from_utf8_lossy(&interface.stdout).to_string()
+}
+
+/// Get the MAC Address (MacOS/Linux) in a safe String
+/// Capture the error and send it to sentry + print it
+/// TODO - Should change the return value in case of an error
+#[cfg(target_os = "linux")]
+pub fn get_mac_address() -> String {
+    match mac_address::mac_address_by_name(&get_default_interface()) {
+        Ok(Some(val)) => val.to_string(),
+        Ok(None) => String::from("none"),
         Err(x) => {
             sentry::capture_error(&x);
             syslog(x.to_string(), false, true, false);
@@ -67,7 +46,24 @@ pub fn get_mac_address() -> String {
     }
 }
 
-/* Get the user currently logged, if more than 1 user, return the last one */
+/// Get the MAC Address (Windows) in a safe String
+/// Capture the error and send it to sentry + print it
+/// TODO - Should change the return value in case of an error
+#[cfg(target_os = "windows")]
+pub fn get_mac_address() -> String {
+    match mac_address::get_mac_address() {
+        Ok(Some(val)) => val.to_string(),
+        Ok(None) => String::from("none"),
+        Err(x) => {
+            sentry::capture_error(&x);
+            syslog(x.to_string(), false, true, false);
+            x.to_string()
+        }
+    }
+}
+
+/// Get the logged users and only keep the last/first one
+/// Will be updated to return a Vec<String> instead
 pub fn get_logged_user() -> String {
     let logged_users = Command::new("bash")
         .arg("-c")
@@ -83,10 +79,11 @@ pub fn get_logged_user() -> String {
     }
 }
 
-/* Get the os version (Mac/Linux/Windows) in a safe String */
+/// Get the os version (Mac/Linux/Windows) in a safe String
+/// Capture the error and send it to sentry + print it
+/// TODO - Should change the return value in case of an error
 pub fn get_os_version() -> String {
-    let os_release = os_version::detect();
-    match os_release {
+    match os_version::detect() {
         Ok(val) => val.to_string(),
         Err(x) => {
             capture_anyhow(&x);
@@ -96,10 +93,12 @@ pub fn get_os_version() -> String {
     }
 }
 
-/* Get the hostname (Mac/Linux/Windows) in a safe String */
+/// Get the hostname (Mac/Linux/Windows) in a safe String
+/// Capture the error and send it to sentry + print it
+/// TODO - Should change the return value in case of an error
 pub fn get_hostname() -> String {
-    match hostname() {
-        Ok(val) => val,
+    match hostname::get() {
+        Ok(val) => val.to_string_lossy().to_string(),
         Err(x) => {
             sentry::capture_error(&x);
             syslog(x.to_string(), false, true, false);
@@ -108,7 +107,7 @@ pub fn get_hostname() -> String {
     }
 }
 
-/* Get the uuid of the host (Mac/Linux/Windows) in a safe String */
+/// Get the machine UUID (Mac/Linux/Windows) as a String
 pub fn get_uuid() -> String {
     match machine_uid::get() {
         Ok(val) => val,
@@ -119,7 +118,7 @@ pub fn get_uuid() -> String {
     }
 }
 
-/* Retrieve sensors data in form of vector */
+/// Retrieve the sensors and return them as a Vec<String>
 pub fn get_senors_data(sys: &System) -> Vec<Sensors> {
     let components = sys.get_components();
     let mut sensors: Vec<Sensors> = Vec::with_capacity(components.len());
@@ -132,7 +131,7 @@ pub fn get_senors_data(sys: &System) -> Vec<Sensors> {
     sensors
 }
 
-/* Retrieve disks data in form of vector */
+/// Retrieve the disks and return them as a Vec<Disks>
 pub fn get_disks_data(sys: &System) -> Vec<Disks> {
     let disks = sys.get_disks();
     let mut vdisks: Vec<Disks> = Vec::with_capacity(disks.len());
@@ -147,7 +146,8 @@ pub fn get_disks_data(sys: &System) -> Vec<Disks> {
     vdisks
 }
 
-/* Return the avg load of the system in 1,5,15min */
+/// Return LoadAvg struct containing the 1, 5 and 15 percentil
+/// cpu average load
 pub fn get_avg_load(sys: &System) -> LoadAvg {
     let load_avg = sys.get_load_average();
     LoadAvg {
@@ -155,4 +155,10 @@ pub fn get_avg_load(sys: &System) -> LoadAvg {
         five: load_avg.five,
         fifteen: load_avg.fifteen,
     }
+}
+
+/// Return the uptime of the current host
+/// In seconds and as i64 due to the database not handling u64
+pub fn get_uptime(sys: &System) -> i64 {
+    sys.get_uptime() as i64
 }

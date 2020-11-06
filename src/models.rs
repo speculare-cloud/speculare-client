@@ -54,59 +54,55 @@ pub struct Global {
 
 impl Global {
     pub fn start(&mut self, interval: Option<u64>) {
-        /* Declare that the thread has been started */
+        // Declare that the thread has been started
         self.alive.store(true, Ordering::SeqCst);
 
-        /* Clone the boolean to use them in the thread */
+        // Clone the boolean to use them in the thread
         let alive = self.alive.clone();
         let skip = self.skip.clone();
 
-        /* 300, as default is 5 mins */
+        // 300, as default is 5 mins
         let interval = if interval.is_some() {
             interval.unwrap()
         } else {
             300
         };
 
-        /*
-         *  Start and save the thread in a Some
-         *  allowing us to check wether it exists (potentially)
-         */
+        
+        // Start and save the thread in a Some
+        // allowing us to check wether it exists (potentially)
         self.mthread = Some(thread::spawn(move || {
-            /* While the atomic boolean is true */
+            // While the atomic boolean is true
             while alive.load(Ordering::SeqCst) {
-                /* Skip depend on the burst mode, true if active, false if not */
+                // Skip depend on the burst mode, true if active, false if not
                 if !skip.load(Ordering::SeqCst) {
                     match collect_and_send() {
                         Ok(x) => x,
                         Err(x) => syslog(x.to_string(), false, true, true),
                     };
                 }
-                /*
-                 *  Sleep for the interval defined above
-                 *  don't spam the CPU nor the server
-                 */
+                
+                // Sleep for the interval defined above
+                // don't spam the CPU nor the server
                 thread::sleep(Duration::from_secs(interval));
             }
         }));
     }
 
     // TODO
-    /* Start the burst mode - skipping regular thread */
+    // Start the burst mode - skipping regular thread */
     pub fn burst_on(&mut self) {
         self.skip.store(true, Ordering::SeqCst);
     }
 
     // TODO
-    /* Stop the burst mode - resuming regular thread */
+    // Stop the burst mode - resuming regular thread */
     pub fn burst_off(&mut self) {
         self.skip.store(false, Ordering::SeqCst);
     }
 
-    /*
-     *  Stop the thread by setting the atomic bool to false
-     *  joining the thread and stopping it asap (might take up to interval time)
-     */
+    // Stop the thread by setting the atomic bool to false
+    // joining the thread and stopping it asap (might take up to interval time)
     pub fn stop(&mut self) {
         self.alive.store(false, Ordering::SeqCst);
         self.mthread

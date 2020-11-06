@@ -7,14 +7,15 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-machine-uid = "0.2.0"
+log = "0.4.11"
+dotenv = "0.15.0"
+hostname = "0.3.1"
+sysinfo = "0.15.3"
 os-version = "0.1.1"
 env_logger = "0.8.1"
-sys-info = "0.7.0"
-sysinfo = "0.15.3"
-sentry = { version = "0.20.1", features = ["anyhow"] }
-dotenv = "0.15.0"
-log = "0.4.11"
 lazy_static = "1.4.0"
-reqwest = { version = "0.10", features = ["blocking", "json"] }
+machine-uid = "0.2.0"
+mac_address = "1.1.1"
 serde = { version = "1.0", features = ["derive"] }
+sentry = { version = "0.20.1", features = ["anyhow"] }
+reqwest = { version = "0.10", features = ["blocking", "json"] }

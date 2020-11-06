@@ -614,6 +614,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "mac_address"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d9bb26482176bddeea173ceaa2acec85146d20cdcc631eafaf9d605d3d4fc23"
+dependencies = [
+ "nix",
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "machine-uid"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -739,6 +749,18 @@ dependencies = [
  "cfg-if 0.1.10",
  "libc",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "nix"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85db2feff6bf70ebc3a4793191517d5f0331100a2f10f9bf93b5e5214f32b7b7"
+dependencies = [
+ "bitflags",
+ "cc",
+ "cfg-if 0.1.10",
+ "libc",
 ]
 
 [[package]]
@@ -1323,14 +1345,15 @@ version = "0.1.0"
 dependencies = [
  "dotenv",
  "env_logger",
+ "hostname",
  "lazy_static",
  "log",
+ "mac_address",
  "machine-uid",
  "os-version",
  "reqwest",
  "sentry",
  "serde",
- "sys-info",
  "sysinfo",
 ]
 
@@ -1355,16 +1378,6 @@ dependencies = [
  "quote",
  "syn",
  "unicode-xid",
-]
-
-[[package]]
-name = "sys-info"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5cfbd84f86389198ade41b439f72a5b1b3a8ba728e61cd589e1720d0df44c39"
-dependencies = [
- "cc",
- "libc",
 ]
 
 [[package]]

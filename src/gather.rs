@@ -1,11 +1,11 @@
 use crate::models;
-use crate::sysinfo::DiskExt;
 use crate::utils;
 
 use models::{Disks, LoadAvg, Sensors};
+use psutil::sensors::TemperatureSensor;
+use psutil::*;
 use sentry::integrations::anyhow::capture_anyhow;
 use std::process::Command;
-use sysinfo::{ComponentExt, System, SystemExt};
 use utils::syslog;
 
 /// Return the default interface on Linux
@@ -64,6 +64,7 @@ pub fn get_mac_address() -> String {
 
 /// Get the logged users and only keep the last/first one
 /// Will be updated to return a Vec<String> instead
+/// TODO - Should change the return value in case of an error
 pub fn get_logged_user() -> String {
     let logged_users = Command::new("bash")
         .arg("-c")
@@ -108,6 +109,7 @@ pub fn get_hostname() -> String {
 }
 
 /// Get the machine UUID (Mac/Linux/Windows) as a String
+/// TODO - Should change the return value in case of an error
 pub fn get_uuid() -> String {
     match machine_uid::get() {
         Ok(val) => val,
@@ -119,37 +121,41 @@ pub fn get_uuid() -> String {
 }
 
 /// Retrieve the sensors and return them as a Vec<String>
-pub fn get_senors_data(sys: &System) -> Vec<Sensors> {
-    let components = sys.get_components();
-    let mut sensors: Vec<Sensors> = Vec::with_capacity(components.len());
-    for component in components {
+pub fn get_senors_data() -> Vec<Sensors> {
+    let temperatures: Vec<TemperatureSensor> = sensors::temperatures()
+        .into_iter()
+        .filter_map(Result::ok)
+        .collect();
+    let mut sensors: Vec<Sensors> = Vec::with_capacity(temperatures.len());
+    for temp in temperatures {
         sensors.push(Sensors {
-            label: component.get_label().to_string(),
-            temp: f64::from(component.get_temperature()),
+            label: temp.label().unwrap_or("?").to_string(),
+            temp: f64::from(temp.current().celsius()),
         })
     }
     sensors
 }
 
 /// Retrieve the disks and return them as a Vec<Disks>
-pub fn get_disks_data(sys: &System) -> Vec<Disks> {
-    let disks = sys.get_disks();
-    let mut vdisks: Vec<Disks> = Vec::with_capacity(disks.len());
-    for disk in disks {
+pub fn get_disks_data() -> Vec<Disks> {
+    let partitions = disk::partitions_physical().unwrap();
+    let mut vdisks: Vec<Disks> = Vec::with_capacity(partitions.len());
+    for disk in partitions {
+        let mount = disk.mountpoint();
+        let disk_usage = disk::disk_usage(mount).unwrap();
         vdisks.push(Disks {
-            name: disk.get_name().to_str().unwrap_or("?").to_string(),
-            mount_point: disk.get_mount_point().display().to_string(),
-            total_space: (disk.get_total_space() / 100000) as i64,
-            avail_space: (disk.get_available_space() / 100000) as i64,
+            name: disk.device().to_string(),
+            mount_point: mount.display().to_string(),
+            total_space: (disk_usage.total() / 100000) as i64,
+            avail_space: (disk_usage.free() / 100000) as i64,
         })
     }
     vdisks
 }
 
-/// Return LoadAvg struct containing the 1, 5 and 15 percentil
-/// cpu average load
-pub fn get_avg_load(sys: &System) -> LoadAvg {
-    let load_avg = sys.get_load_average();
+/// Return LoadAvg struct containing the 1, 5 and 15 percentil cpu average load
+pub fn get_avg_load() -> LoadAvg {
+    let load_avg = host::loadavg().unwrap();
     LoadAvg {
         one: load_avg.one,
         five: load_avg.five,
@@ -159,8 +165,9 @@ pub fn get_avg_load(sys: &System) -> LoadAvg {
 
 /// Return the uptime of the current host
 /// In seconds and as i64 due to the database not handling u64
-pub fn get_uptime(sys: &System) -> i64 {
-    sys.get_uptime() as i64
+/// TODO - It's unsecure to cast to i64 but faster :(
+pub fn get_uptime() -> i64 {
+    host::uptime().unwrap().as_secs() as i64
 }
 
 /// Return the avg cpu_freq across all core as i64

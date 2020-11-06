@@ -1,30 +1,15 @@
-#[macro_use]
-extern crate lazy_static;
+extern crate cpuid;
 extern crate mac_address;
 extern crate reqwest;
-extern crate sysinfo;
-extern crate cpuid;
 
 mod gather;
 mod models;
 mod process;
 mod utils;
 
-use models::*;
-use std::{
-    sync,
-    sync::{atomic::AtomicBool, Mutex},
-    thread,
-    time::Duration,
-};
+use process::collect_and_send;
+use std::{thread, time::Duration};
 use utils::syslog;
-
-lazy_static! {
-    static ref G_INFO: Mutex<Global> = Mutex::new(Global {
-        mthread: None,
-        alive: sync::Arc::new(AtomicBool::new(false)),
-    });
-}
 
 /// Main which start the process and loop indefinietly
 /// No other way to stop it than killing the process
@@ -46,19 +31,28 @@ fn main() {
     // Define the sentry guard
     let _guard = sentry::init(std::env::var("sentry_endpoint").expect("missing sentry endpoint"));
 
+    // Create the client instance for each loop
+    // Do not create a new one each time
+    let timeout = Duration::new(15, 0);
+    // Create a single client instance for the app
+    let client = match reqwest::blocking::ClientBuilder::new()
+        .timeout(timeout)
+        .connect_timeout(timeout)
+        .build()
     {
-        // The mutex 'data' will be dropped
-        // once outside of the scope, so no need
-        // to drop it manually
-        G_INFO.lock().unwrap().start(Some(1));
-    }
+        Ok(val) => val,
+        Err(x) => panic!(x),
+    };
 
-    // TODO - Start an actix web server instead
-    // The actix web server will recieve order from the
-    // master server to run in burst mode for a certain time.
-    // But burst mode we call it sending info more than once every 5min.
+    // Start the app loop
     loop {
-        thread::sleep(Duration::from_millis(10000));
-        /* G_INFO.lock().unwrap().burst_on() */
+        match collect_and_send(&client) {
+            Ok(x) => x,
+            Err(x) => syslog(x.to_string(), false, true, true),
+        };
+
+        // Sleep for the interval defined above
+        // don't spam the CPU nor the server
+        thread::sleep(Duration::from_secs(1));
     }
 }

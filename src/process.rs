@@ -7,31 +7,23 @@ use log::info;
 use models::*;
 use reqwest::blocking::Client;
 use std::error::Error;
-use sysinfo::{RefreshKind, System, SystemExt};
 use utils::syslog;
 
 /// Collect all the metrics and send them to the server instance
-pub fn collect_and_send(sys: &mut System, client: &Client) -> Result<(), Box<dyn Error>> {
+pub fn collect_and_send(client: &Client) -> Result<(), Box<dyn Error>> {
     // Refresh data within the sys
-    //sys.refresh_all();
-    sys.refresh_specifics(
-        RefreshKind::new()
-            .with_disks_list()
-            .with_processes()
-            .with_components_list(),
-    );
 
     // Construct the Data structure with all the info needed
     let data = Data {
         os: get_os_version(),
         hostname: get_hostname(),
-        uptime: get_uptime(&sys),
+        uptime: get_uptime(),
         uuid: get_uuid(),
         cpu_freq: get_avg_cpufreq(),
-        load_avg: get_avg_load(&sys),
+        load_avg: get_avg_load(),
         user: get_logged_user(),
-        sensors: get_senors_data(&sys),
-        disks: get_disks_data(&sys),
+        sensors: get_senors_data(),
+        disks: get_disks_data(),
         mac_address: get_mac_address(),
     };
 

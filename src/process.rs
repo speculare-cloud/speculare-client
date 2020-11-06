@@ -29,6 +29,7 @@ pub fn collect_and_send(client: &Client) -> Result<(), Box<dyn Error>> {
 
     // Prepare to send
     // Get the url (where to send)
+    // TODO - Do it only one time
     let mut url: String = String::new();
     match std::env::var("api_url") {
         Ok(val) => url.push_str(&val),
@@ -37,18 +38,19 @@ pub fn collect_and_send(client: &Client) -> Result<(), Box<dyn Error>> {
         }
     };
     // Get the token (Authorization)
-    let mut token: String = String::new();
-    match std::env::var("api_token") {
-        Ok(val) => token.push_str(&val),
-        Err(x) => {
-            syslog(x.to_string(), true, true, false);
-        }
-    };
+    // TODO - Do it only one time
+    // let mut token: String = String::new();
+    // match std::env::var("api_token") {
+    //     Ok(val) => token.push_str(&val),
+    //     Err(x) => {
+    //         syslog(x.to_string(), true, true, false);
+    //     }
+    // };
 
     // Send the request
     let res = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", token))
+        //.header("Authorization", format!("Bearer {}", token))
         .json(&data)
         .send();
 

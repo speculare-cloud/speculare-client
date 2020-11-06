@@ -22,13 +22,18 @@ pub fn collect_and_send(sys: &mut System, client: &Client) -> Result<(), Box<dyn
             .with_cpu(),
     );
 
+    let mcpuf: i64 = match cpuid::clock_frequency() {
+        Some(val) => val.into(),
+        None => 0,
+    };
+
     // Construct the Data structure with all the info needed
     let data = Data {
         os: get_os_version(),
         hostname: get_hostname(),
         uptime: get_uptime(&sys),
         uuid: get_uuid(),
-        cpu_freq: get_avg_cpufreq(&sys),
+        cpu_freq: mcpuf,
         load_avg: get_avg_load(&sys),
         user: get_logged_user(),
         sensors: get_senors_data(&sys),

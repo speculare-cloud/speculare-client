@@ -3,6 +3,7 @@ extern crate lazy_static;
 extern crate mac_address;
 extern crate reqwest;
 extern crate sysinfo;
+extern crate cpuid;
 
 mod gather;
 mod models;

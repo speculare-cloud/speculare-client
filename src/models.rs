@@ -80,7 +80,7 @@ impl Global {
             .build()
         {
             Ok(val) => val,
-            Err(x) => panic!(x)
+            Err(x) => panic!(x),
         };
 
         // Start and save the thread in a Some

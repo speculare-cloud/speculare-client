@@ -7,14 +7,20 @@ use log::info;
 use models::*;
 use reqwest::blocking::Client;
 use std::error::Error;
-use sysinfo::{ProcessorExt, System, SystemExt};
+use sysinfo::{RefreshKind, System, SystemExt};
 use utils::syslog;
 
-// TODO
-// Cut this function is some small relevant function
+/// Collect all the metrics and send them to the server instance
 pub fn collect_and_send(sys: &mut System, client: &Client) -> Result<(), Box<dyn Error>> {
     // Refresh data within the sys
-    sys.refresh_all();
+    //sys.refresh_all();
+    sys.refresh_specifics(
+        RefreshKind::new()
+            .with_disks_list()
+            .with_processes()
+            .with_components_list()
+            .with_cpu(),
+    );
 
     // Construct the Data structure with all the info needed
     let data = Data {
@@ -22,8 +28,7 @@ pub fn collect_and_send(sys: &mut System, client: &Client) -> Result<(), Box<dyn
         hostname: get_hostname(),
         uptime: get_uptime(&sys),
         uuid: get_uuid(),
-        // TODO - Change the way we get the cpu freq
-        cpu_freq: sys.get_processors()[0].get_frequency() as i64,
+        cpu_freq: get_avg_cpufreq(&sys),
         load_avg: get_avg_load(&sys),
         user: get_logged_user(),
         sensors: get_senors_data(&sys),

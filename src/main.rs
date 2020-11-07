@@ -13,10 +13,13 @@ use utils::syslog;
 
 /// Main which start the process and loop indefinietly
 /// No other way to stop it than killing the process
-fn main() {
+fn main() {    
     // Load the config into the env to use accross the prog
-    dotenv::from_path("/etc/speculare.config")
-        .expect("Failed to load speculare.config\nRun the program using `speculare --init`");
+    let dotenv = dotenv::from_path("/etc/speculare.config");
+    if dotenv.is_err() {
+        println!("Cannot find /etc/speculare.config\nRun `speculare --init` to create it or create it manually");
+        return;
+    }
     // Define log as info during development time
     std::env::set_var(
         "RUST_LOG",

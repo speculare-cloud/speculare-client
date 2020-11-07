@@ -3,14 +3,14 @@ use crate::models;
 use crate::utils;
 
 use log::info;
-use metrics::{cpu::*, disks::*, miscs::*, sensors::*};
+use metrics::{cpu::*, disks::*, miscs::*, sensors::*, memory::get_memory};
 use models::DynData;
 use reqwest::blocking::Client;
 use std::error::Error;
 use utils::syslog;
 
 /// Collect all the metrics and send them to the server instance
-pub fn collect_and_send(client: &Client, url: &String) -> Result<(), Box<dyn Error>> {
+pub fn collect_and_send(client: &Client, url: &str) -> Result<(), Box<dyn Error>> {
     // Construct the Data structure with all the info needed
     let dyndata = DynData {
         uuid: get_uuid(),
@@ -19,6 +19,7 @@ pub fn collect_and_send(client: &Client, url: &String) -> Result<(), Box<dyn Err
         load_avg: get_avg_load(),
         sensors: get_sensors_data(),
         disks: get_disks_data(),
+        memory: get_memory(),
     };
 
     // Send the request

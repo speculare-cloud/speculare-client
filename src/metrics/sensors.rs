@@ -16,7 +16,7 @@ pub fn get_sensors_data() -> Vec<Sensors> {
     for temp in temperatures {
         sensors.push(Sensors {
             label: temp.label().unwrap_or("?").to_string(),
-            temp: f64::from(temp.current().celsius()),
+            temp: temp.current().celsius(),
         })
     }
     sensors

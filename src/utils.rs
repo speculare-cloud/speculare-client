@@ -1,9 +1,7 @@
 use log::{info, warn};
 
-// Will only send the syslog on the iMac
-// -> Send message to syslog.s19.be
-// -> warn or info the message in the log of the program
-// -> panic if needed
+/// Syslog is the function to call anytime you want to log something
+/// Or you want to crash, depend on what kind of error you're facing
 pub fn syslog(message: String, fail: bool, warn: bool) {
     if !fail {
         if warn {

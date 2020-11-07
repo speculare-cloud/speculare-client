@@ -14,12 +14,12 @@ use utils::syslog;
 /// Main which start the process and loop indefinietly
 /// No other way to stop it than killing the process
 fn main() {
-    // Define log as info during development time
-    std::env::set_var("RUST_LOG", "info");
-    env_logger::init();
-
     // Load the config into the env to use accross the prog
     dotenv::from_path("/etc/speculare.config").expect("Failed to load speculare.config");
+    // Define log as info during development time
+    std::env::set_var("RUST_LOG", std::env::var("debug_level").unwrap_or(String::from("info")));
+    // Init the logger
+    env_logger::init();
 
     // Define the sentry guard
     let _guard = sentry::init(std::env::var("sentry_endpoint").expect("missing sentry endpoint"));

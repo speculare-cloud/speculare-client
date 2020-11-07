@@ -32,7 +32,6 @@ pub fn get_uuid() -> String {
 
 /// Get the hostname (Mac/Linux/Windows) in a safe String
 /// Capture the error and send it to sentry + print it
-/// TODO - Should change the return value in case of an error
 pub fn get_hostname() -> String {
     host::info().hostname().to_string()
 }

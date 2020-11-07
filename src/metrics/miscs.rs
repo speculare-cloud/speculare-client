@@ -4,7 +4,7 @@ use psutil::host;
 /// Capture the error and send it to sentry + print it
 /// Take approx 0,080ms to load the info 'os_info::get()'
 /// But it's okay since we'll only call this function once in a while
-pub fn get_os_version() -> String{
+pub fn get_os_version() -> String {
     let info = os_info::get();
     let mut os_version = info.os_type().to_string();
     os_version.push_str(&info.version().to_string());
@@ -28,6 +28,6 @@ pub fn get_hostname() -> String {
 pub fn get_uptime() -> i64 {
     match host::uptime() {
         Ok(val) => val.as_secs() as i64,
-        Err(_) => 0
+        Err(_) => 0,
     }
 }

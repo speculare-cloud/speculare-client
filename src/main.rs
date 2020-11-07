@@ -15,14 +15,15 @@ use utils::syslog;
 /// No other way to stop it than killing the process
 fn main() {
     // Load the config into the env to use accross the prog
-    dotenv::from_path("/etc/speculare.config").expect("Failed to load speculare.config");
+    dotenv::from_path("/etc/speculare.config")
+        .expect("Failed to load speculare.config\nRun the program using `speculare --init`");
     // Define log as info during development time
-    std::env::set_var("RUST_LOG", std::env::var("debug_level").unwrap_or(String::from("info")));
+    std::env::set_var(
+        "RUST_LOG",
+        std::env::var("debug_level").unwrap_or(String::from("info")),
+    );
     // Init the logger
     env_logger::init();
-
-    // Define the sentry guard
-    let _guard = sentry::init(std::env::var("sentry_endpoint").expect("missing sentry endpoint"));
 
     // Create the client instance for each loop
     // Do not create a new one each time
@@ -41,7 +42,7 @@ fn main() {
     loop {
         match collect_and_send(&client, &url) {
             Ok(x) => x,
-            Err(x) => syslog(x.to_string(), false, true, true),
+            Err(x) => syslog(x.to_string(), false, true),
         };
         // Sleep for the interval defined above
         // don't spam the CPU nor the server

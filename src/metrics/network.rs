@@ -29,34 +29,30 @@ fn get_default_interface() -> String {
 
 /// Get the MAC Address (MacOS/Linux) in a safe String
 /// Capture the error and send it to sentry + print it
-/// TODO - Should change the return value in case of an error
 /// WARNING - This function is slow due to the call with Command from get_default_interface
 #[cfg(target_os = "linux")]
 pub fn get_mac_address() -> String {
     match mac_address::mac_address_by_name(&get_default_interface()) {
         Ok(Some(val)) => val.to_string(),
-        Ok(None) => String::from("none"),
+        Ok(None) => String::from("unknown"),
         Err(x) => {
-            sentry::capture_error(&x);
-            syslog(x.to_string(), false, true, false);
-            x.to_string()
+            syslog(x.to_string(), false, true);
+            String::from("unknown")
         }
     }
 }
 
 /// Get the MAC Address (Windows) in a safe String
 /// Capture the error and send it to sentry + print it
-/// TODO - Should change the return value in case of an error
 /// WARNING - This function is slow due to the call with Command from get_default_interface
 #[cfg(target_os = "windows")]
 pub fn get_mac_address() -> String {
     match mac_address::get_mac_address() {
         Ok(Some(val)) => val.to_string(),
-        Ok(None) => String::from("none"),
+        Ok(None) => String::from("unknown"),
         Err(x) => {
-            sentry::capture_error(&x);
-            syslog(x.to_string(), false, true, false);
-            x.to_string()
+            syslog(x.to_string(), false, true);
+            String::from("unknown")
         }
     }
 }

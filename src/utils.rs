@@ -4,20 +4,13 @@ use log::{info, warn};
 // -> Send message to syslog.s19.be
 // -> warn or info the message in the log of the program
 // -> panic if needed
-pub fn syslog(message: String, fail: bool, warn: bool, sentry_send: bool) {
-    if warn {
-        warn!("{}", message);
-    } else {
-        info!("{}", message);
-    }
-    if fail {
-        panic!(message);
-    } else if sentry_send {
-        let sentry_level = if warn {
-            sentry::Level::Warning
+pub fn syslog(message: String, fail: bool, warn: bool) {
+    if !fail {
+        if warn {
+            warn!("{}", message);
         } else {
-            sentry::Level::Info
-        };
-        sentry::capture_message(&message, sentry_level);
+            info!("{}", message);
+        }
     }
+    panic!(message);
 }

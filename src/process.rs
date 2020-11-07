@@ -3,7 +3,7 @@ use crate::models;
 use crate::utils;
 
 use log::info;
-use metrics::{cpu::*, disks::*, miscs::*, sensors::*, memory::get_memory};
+use metrics::{cpu::*, disks::*, memory::get_memory, miscs::*, sensors::*};
 use models::DynData;
 use reqwest::blocking::Client;
 use std::error::Error;
@@ -31,8 +31,7 @@ pub fn collect_and_send(client: &Client, url: &str) -> Result<(), Box<dyn Error>
     match res {
         Ok(res) => info!("return status : {}", res.status()),
         Err(x) => {
-            sentry::capture_error(&x);
-            syslog(format!("calling error : {}", x), false, true, false);
+            syslog(format!("calling error : {}", x), false, true);
         }
     }
     Ok(())

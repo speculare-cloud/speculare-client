@@ -7,11 +7,15 @@ This project is meant to evolve in something more complete and more complexe in 
 
 ## Setup
 
+- install libcpuid dependency
 ```bash
 apt install cpuidtool cpuidtool libcpuid-dev
 ```
-
-- copy `configs/exemple.config` into your `/etc`
+- run (to init .config)
+```
+/path/to/speculare --config
+```
+- or copy `configs/exemple.config` into your `$HOME/speculare.config`
 ```bash
 cp configs/exemple.config /etc/speculare.config
 ```

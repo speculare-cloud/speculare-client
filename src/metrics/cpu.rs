@@ -12,6 +12,7 @@ pub fn get_avg_cpufreq() -> i64 {
 }
 
 /// Return LoadAvg struct containing the 1, 5 and 15 percentil cpu average load
+#[cfg(target_os = "linux")]
 pub fn get_avg_load() -> LoadAvg {
     let load_avg = host::loadavg().unwrap();
     LoadAvg {
@@ -19,4 +20,8 @@ pub fn get_avg_load() -> LoadAvg {
         five: load_avg.five,
         fifteen: load_avg.fifteen,
     }
+}
+#[cfg(target_os = "macos")]
+pub fn get_avg_load() -> LoadAvg {
+    todo!()
 }

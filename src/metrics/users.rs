@@ -7,6 +7,11 @@ const UT_LINESIZE: usize = 32;
 const UT_NAMESIZE: usize = 32;
 const UT_HOSTSIZE: usize = 256;
 static UTMP_FILE_PATH: &'static str = "/var/run/utmp";
+
+const _UTX_USERSIZE: usize = 256;
+const _UTX_LINESIZE: usize = 32;
+const _UTX_IDSIZE: usize = 4;
+const _UTX_HOSTSIZE: usize = 256;
 static UTMPX_FILE_PATH: &'static str = "/var/run/utmpx";
 
 #[repr(C)]
@@ -37,6 +42,19 @@ pub struct utmp {
     pub ut_tv: ut_tv,
     pub ut_addr_v6: [i32; 4],
     pub __glibc_reserved: [c_char; 20],
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct utmpx {
+	pub ut_user: [c_char; _UTX_USERSIZE],
+	pub ut_id: [c_char; _UTX_IDSIZE],
+    pub ut_line: [c_char; _UTX_LINESIZE],
+	pub ut_pid: pid_t,
+	pub ut_type: c_short,
+	pub ut_tv: ut_tv,
+    pub ut_host: [c_char; _UTX_HOSTSIZE],
+    pub __glibc_reserved: [c_char; 16],
 }
 
 impl Default for exit_status {
@@ -75,6 +93,21 @@ impl Default for utmp {
     }
 }
 
+impl Default for utmpx {
+    fn default() -> utmpx {
+        utmpx {
+            ut_type: 0,
+            ut_pid: 0,
+            ut_line: [0; _UTX_LINESIZE],
+            ut_id: [0; _UTX_IDSIZE],
+            ut_user: [0; _UTX_USERSIZE],
+            ut_host: [0; _UTX_HOSTSIZE],
+            ut_tv: Default::default(),
+            __glibc_reserved: [0; 16],
+        }
+    }
+}
+
 extern "C" {
     pub fn read(fd: c_int, buf: *mut c_void, count: size_t) -> usize;
 }
@@ -85,7 +118,7 @@ extern "C" {
 /// ut_type == USER_PROCESS == 7
 /// Transform the ut_user (&[i8; 32]) to &[u8] unsing unsafe transmute for speed concern
 /// Also relying on C's read (might change later, not sure)
-#[cfg(target_family = "unix")]
+#[cfg(target_os = "linux")]
 pub fn get_utmp() -> Vec<String> {
 	let mut users: Vec<String> = Vec::new();
 	let utmp_file = match File::open(UTMP_FILE_PATH) {
@@ -109,7 +142,30 @@ pub fn get_utmp() -> Vec<String> {
 	}
 	users
 }
+#[cfg(target_os = "macos")]
+pub fn get_utmp() -> Vec<String> {
+	let mut users: Vec<String> = Vec::new();
+	let utmpx_file = match File::open(UTMPX_FILE_PATH) {
+		Ok(val) => val,
+		Err(_) => return users
+	};
+	let mut utmpx_struct: utmpx = Default::default();
+    let buffer: *mut c_void = &mut utmpx_struct as *mut _ as *mut c_void;
 
+    unsafe {
+        while read(utmpx_file.as_raw_fd(), buffer, mem::size_of::<utmpx>()) != 0 {
+            let cbuffer = &*(buffer as *mut utmpx) as &utmpx;
+            let cuser = std::mem::transmute::<&[i8], &[u8]>(&cbuffer.ut_user);
+
+            if cbuffer.ut_type == 7 {
+				let csuser = std::str::from_utf8(cuser).unwrap_or("unknown").trim_matches('\0');
+                dbg!(csuser);
+				users.push(csuser.to_string());
+            }
+        }
+	}
+	users
+}
 
 // #[cfg(target_os = "macos")]
 // pub fn get_utmp() -> Vec<String> {

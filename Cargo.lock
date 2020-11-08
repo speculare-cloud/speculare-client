@@ -1043,6 +1043,7 @@ dependencies = [
  "cpuid",
  "dotenv",
  "env_logger",
+ "libc",
  "log",
  "mac_address",
  "os_info",

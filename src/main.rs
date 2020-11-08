@@ -15,7 +15,6 @@ use utils::syslog;
 /// Main which start the process and loop indefinietly
 /// No other way to stop it than killing the process
 fn main() {
-    
     dbg!(metrics::users::get_utmp());
 
     return;
@@ -29,7 +28,7 @@ fn main() {
     // Define log as info during development time
     std::env::set_var(
         "RUST_LOG",
-        std::env::var("debug_level").unwrap_or(String::from("info")),
+        std::env::var("debug_level").unwrap_or_else(|_| String::from("info")),
     );
     // Init the logger
     env_logger::init();

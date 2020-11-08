@@ -7,7 +7,7 @@ pub fn get_os_version() -> String {
     let info = os_info::get();
     let mut os_version = info.os_type().to_string();
     os_version.push_str(&info.version().to_string());
-    return os_version;
+    os_version
 }
 
 /// Get the machine UUID (Mac/Linux/Windows) as a String.

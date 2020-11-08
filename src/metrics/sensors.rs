@@ -5,6 +5,7 @@ use psutil::sensors;
 use psutil::sensors::TemperatureSensor;
 
 /// Retrieve the sensors and return them as a Vec<String>.
+#[cfg(target_os = "linux")]
 pub fn get_sensors_data() -> Vec<Sensors> {
     let temperatures: Vec<TemperatureSensor> = sensors::temperatures()
         .into_iter()
@@ -18,4 +19,9 @@ pub fn get_sensors_data() -> Vec<Sensors> {
         })
     }
     sensors
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn get_sensors_data() -> Vec<Sensors> {
+    Vec::new()
 }

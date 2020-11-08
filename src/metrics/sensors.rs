@@ -5,10 +5,6 @@ use psutil::sensors;
 use psutil::sensors::TemperatureSensor;
 
 /// Retrieve the sensors and return them as a Vec<String>.
-/// 
-/// SLOW - This function take up to 180ms.
-/// 
-/// TODO - Optimize or find alternative.
 pub fn get_sensors_data() -> Vec<Sensors> {
     let temperatures: Vec<TemperatureSensor> = sensors::temperatures()
         .into_iter()

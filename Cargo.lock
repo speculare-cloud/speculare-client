@@ -745,12 +745,13 @@ dependencies = [
 [[package]]
 name = "psutil"
 version = "3.2.0"
-source = "git+https://github.com/Martichou/rust-psutil#a4643395c7fa836af6d30626ed242f1fcc65c5ae"
+source = "git+https://github.com/Martichou/rust-psutil#3c5e992410b2da46d95efdf69a59254551da5301"
 dependencies = [
  "cfg-if 0.1.10",
  "darwin-libproc",
  "derive_more",
  "glob",
+ "libc",
  "mach",
  "nix 0.17.0",
  "num_cpus",

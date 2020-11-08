@@ -25,6 +25,7 @@ static UTMPX_FILE_PATH: &str = "/var/run/utmpx";
 
 #[repr(C)]
 #[derive(Debug)]
+#[cfg(target_os = "linux")]
 pub struct exit_status {
     pub e_termination: c_short,
     pub e_exit: c_short,
@@ -68,6 +69,7 @@ pub struct utmpx {
     pub __glibc_reserved: [c_char; 16],
 }
 
+#[cfg(target_os = "linux")]
 impl Default for exit_status {
     fn default() -> exit_status {
         exit_status {
@@ -122,9 +124,12 @@ impl Default for utmpx {
 }
 
 extern "C" {
+    #[cfg(target_os = "linux")]
     pub fn read(fd: c_int, buf: *mut c_void, count: size_t) -> usize;
     #[cfg(target_os = "macos")]
-    pub fn getutxent_wtmp() -> *mut c_void;
+    pub fn setutxent() -> c_void;
+    #[cfg(target_os = "macos")]
+    pub fn getutxent() -> *mut c_void;
 }
 
 /// Get the currently logged user from /var/run/utmp
@@ -146,7 +151,7 @@ pub fn get_utmp() -> Vec<String> {
             let cbuffer = &*(buffer as *mut utmp) as &utmp;
             let cuser = &*(&cbuffer.ut_user as *const [i8] as *const [u8]);
 
-            if cbuffer.ut_type == 7 {
+            if cuser[0] != 0 && cbuffer.ut_type == 7 {
                 let csuser = std::str::from_utf8(cuser)
                     .unwrap_or("unknown")
                     .trim_matches('\0');
@@ -159,35 +164,31 @@ pub fn get_utmp() -> Vec<String> {
 
 /// Get the currently logged user from /var/run/utmpx
 /// UTMPX Struct is the same as the one from C utmpx.h
-/// The check to see if the utmpx struct is from a user respect the C standarts
-/// ut_type == USER_PROCESS == 7
+/// MacOS implement this a bit differently than linux
+/// Couldn't figure a way to get the user logged using the plain file
+/// Still need to investigate this but for now it's working using
+/// MacOS's function [setutxent, getutxent]
 #[cfg(target_os = "macos")]
 pub fn get_utmp() -> Vec<String> {
     let mut users: Vec<String> = Vec::new();
-    let utmpx_file = match File::open(UTMPX_FILE_PATH) {
-        Ok(val) => val,
-        Err(_) => return users,
-    };
     let mut utmpx_struct: utmpx = Default::default();
-    let buffer: *mut c_void = &mut utmpx_struct as *mut _ as *mut c_void;
+    let mut buffer: *mut c_void = &mut utmpx_struct as *mut _ as *mut c_void;
 
     unsafe {
-
-        while (buffer = getutxent_wtmp()) != 0 {
-            dbg!(&*(buffer as *mut utmpx) as &utmpx);
+        setutxent();
+        buffer = getutxent();
+        while buffer != std::ptr::null_mut() {
+            let cbuffer = &*(buffer as *mut utmpx) as &utmpx;
+            let cuser = &*(&cbuffer.ut_user as *const [i8] as *const [u8]);
+            
+            if cuser[0] != 0 && cbuffer.ut_type == 7 {
+                let csuser = std::str::from_utf8(cuser)
+                        .unwrap_or("unknown")
+                        .trim_matches('\0');
+                users.push(csuser.to_string());
+            }
+            buffer = getutxent();
         }
-
-        // while read(utmpx_file.as_raw_fd(), buffer, mem::size_of::<utmpx>()) != 0 {
-        //     let cbuffer = &*(buffer as *mut utmpx) as &utmpx;
-        //     let cuser = &*(&cbuffer.ut_user as *const [i8] as *const [u8]);
-
-        //     if cbuffer.ut_type == 7 {
-        //         let csuser = std::str::from_utf8(cuser)
-        //             .unwrap_or("unknown")
-        //             .trim_matches('\0');
-        //         users.push(csuser.to_string());
-        //     }
-        // }
     }
     users
 }

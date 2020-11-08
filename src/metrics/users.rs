@@ -181,12 +181,12 @@ pub fn get_users() -> Vec<String> {
         while buffer != std::ptr::null_mut() {
             let cbuffer = &*(buffer as *mut utmpx) as &utmpx;
             let cuser = &*(&cbuffer.ut_user as *const [i8] as *const [u8]);
-            
+
             if cuser[0] != 0 && cbuffer.ut_type == 7 {
                 let csuser = std::str::from_utf8(cuser)
-                        .unwrap_or("unknown")
-                        .trim_matches('\0')
-                        .to_owned();
+                    .unwrap_or("unknown")
+                    .trim_matches('\0')
+                    .to_owned();
                 if !users.contains(&csuser) {
                     users.push(csuser);
                 }

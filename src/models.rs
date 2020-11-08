@@ -1,4 +1,10 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Config {
+    pub api_token: String,
+    pub api_url: String,
+}
 
 #[derive(Debug, Serialize)]
 pub struct Sensors {

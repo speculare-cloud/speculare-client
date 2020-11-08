@@ -11,7 +11,7 @@ pub fn get_os_version() -> String {
 }
 
 /// Get the machine UUID (Mac/Linux/Windows) as a String.
-/// 
+///
 /// TODO
 pub fn get_uuid() -> String {
     todo!()

@@ -4,7 +4,7 @@ use std::process::Command;
 use utils::syslog;
 
 /// Return the default interface on Linux.
-/// 
+///
 /// SLOW.
 #[cfg(target_os = "linux")]
 fn get_default_interface() -> String {
@@ -17,7 +17,7 @@ fn get_default_interface() -> String {
 }
 
 /// Return the default interface on MacOS.
-/// 
+///
 /// SLOW.
 #[cfg(target_os = "macos")]
 fn get_default_interface() -> String {
@@ -30,7 +30,7 @@ fn get_default_interface() -> String {
 }
 
 /// Get the MAC Address (MacOS/Linux) in a safe String.
-/// 
+///
 /// WARNING - This function is slow due to the call with Command from get_default_interface.
 #[cfg(target_family = "unix")]
 pub fn get_mac_address() -> String {
@@ -45,7 +45,7 @@ pub fn get_mac_address() -> String {
 }
 
 /// Get the MAC Address (Windows) in a safe String.
-/// 
+///
 /// WARNING - This function is slow due to the call with Command from get_default_interface.
 #[cfg(target_family = "windows")]
 pub fn get_mac_address() -> String {

@@ -21,7 +21,7 @@ const _UTX_IDSIZE: usize = 4;
 #[cfg(target_os = "macos")]
 const _UTX_HOSTSIZE: usize = 256;
 #[cfg(target_os = "macos")]
-static UTMPX_FILE_PATH: &str = "/private/var/run/utmpx";
+static UTMPX_FILE_PATH: &str = "/var/run/utmpx";
 
 #[repr(C)]
 #[derive(Debug)]
@@ -123,6 +123,8 @@ impl Default for utmpx {
 
 extern "C" {
     pub fn read(fd: c_int, buf: *mut c_void, count: size_t) -> usize;
+    #[cfg(target_os = "macos")]
+    pub fn getutxent_wtmp() -> *mut c_void;
 }
 
 /// Get the currently logged user from /var/run/utmp
@@ -170,17 +172,22 @@ pub fn get_utmp() -> Vec<String> {
     let buffer: *mut c_void = &mut utmpx_struct as *mut _ as *mut c_void;
 
     unsafe {
-        while read(utmpx_file.as_raw_fd(), buffer, mem::size_of::<utmpx>()) != 0 {
-            let cbuffer = &*(buffer as *mut utmpx) as &utmpx;
-            let cuser = &*(&cbuffer.ut_user as *const [i8] as *const [u8]);
 
-            if cbuffer.ut_type == 7 {
-                let csuser = std::str::from_utf8(cuser)
-                    .unwrap_or("unknown")
-                    .trim_matches('\0');
-                users.push(csuser.to_string());
-            }
+        while (buffer = getutxent_wtmp()) != 0 {
+            dbg!(&*(buffer as *mut utmpx) as &utmpx);
         }
+
+        // while read(utmpx_file.as_raw_fd(), buffer, mem::size_of::<utmpx>()) != 0 {
+        //     let cbuffer = &*(buffer as *mut utmpx) as &utmpx;
+        //     let cuser = &*(&cbuffer.ut_user as *const [i8] as *const [u8]);
+
+        //     if cbuffer.ut_type == 7 {
+        //         let csuser = std::str::from_utf8(cuser)
+        //             .unwrap_or("unknown")
+        //             .trim_matches('\0');
+        //         users.push(csuser.to_string());
+        //     }
+        // }
     }
     users
 }

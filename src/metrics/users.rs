@@ -164,12 +164,12 @@ pub fn get_users() -> Vec<String> {
     users
 }
 
-/// Get the currently logged user from /var/run/utmpx
-/// UTMPX Struct is the same as the one from C utmpx.h
-/// MacOS implement this a bit differently than linux
-/// Couldn't figure a way to get the user logged using the plain file
-/// Still need to investigate this but for now it's working using
-/// MacOS's function [setutxent, getutxent]
+/// Get the currently logged user from /var/run/utmpx (I suppose).
+/// UTMPX Struct is the same as the one from C utmpx.h.
+/// MacOS implement this a bit differently than linux.
+/// So this version uses MacOS's function [setutxent, getutxent].
+/// This function will take approx 0,170s to run the first time as
+/// setutxent & getutxent need to open the file and create the static
 #[cfg(target_os = "macos")]
 pub fn get_users() -> Vec<String> {
     let mut users: Vec<String> = Vec::new();

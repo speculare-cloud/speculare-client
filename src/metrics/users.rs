@@ -21,7 +21,7 @@ const _UTX_IDSIZE: usize = 4;
 #[cfg(target_os = "macos")]
 const _UTX_HOSTSIZE: usize = 256;
 #[cfg(target_os = "macos")]
-static UTMPX_FILE_PATH: &str = "/var/run/utmpx";
+static UTMPX_FILE_PATH: &str = "/private/var/run/utmpx";
 
 #[repr(C)]
 #[derive(Debug)]
@@ -156,7 +156,7 @@ pub fn get_utmp() -> Vec<String> {
 }
 
 /// Get the currently logged user from /var/run/utmpx
-/// UTMP Struct is the same as the one from C utmpx.h
+/// UTMPX Struct is the same as the one from C utmpx.h
 /// The check to see if the utmpx struct is from a user respect the C standarts
 /// ut_type == USER_PROCESS == 7
 #[cfg(target_os = "macos")]

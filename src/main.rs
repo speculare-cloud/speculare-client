@@ -15,10 +15,6 @@ use utils::syslog;
 /// Main which start the process and loop indefinietly
 /// No other way to stop it than killing the process
 fn main() {
-    dbg!(metrics::users::get_utmp());
-
-    return;
-
     // Load the config into the env to use accross the prog
     let dotenv = dotenv::from_path("/etc/speculare.config");
     if dotenv.is_err() {

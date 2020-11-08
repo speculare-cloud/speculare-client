@@ -33,6 +33,7 @@ pub struct exit_status {
 
 #[repr(C)]
 #[derive(Debug)]
+#[cfg(not(target_os = "windows"))]
 pub struct ut_tv {
     pub tv_sec: i32,
     pub tv_usec: i32,
@@ -79,6 +80,7 @@ impl Default for exit_status {
     }
 }
 
+#[cfg(not(target_os = "windows"))]
 impl Default for ut_tv {
     fn default() -> ut_tv {
         ut_tv {
@@ -137,7 +139,7 @@ extern "C" {
 /// The check to see if the utmp struct is from a user respect the C standarts
 /// ut_type == USER_PROCESS == 7
 #[cfg(target_os = "linux")]
-pub fn get_utmp() -> Vec<String> {
+pub fn get_users() -> Vec<String> {
     let mut users: Vec<String> = Vec::new();
     let utmp_file = match File::open(UTMP_FILE_PATH) {
         Ok(val) => val,
@@ -169,7 +171,7 @@ pub fn get_utmp() -> Vec<String> {
 /// Still need to investigate this but for now it's working using
 /// MacOS's function [setutxent, getutxent]
 #[cfg(target_os = "macos")]
-pub fn get_utmp() -> Vec<String> {
+pub fn get_users() -> Vec<String> {
     let mut users: Vec<String> = Vec::new();
     let mut utmpx_struct: utmpx = Default::default();
     let mut buffer: *mut c_void = &mut utmpx_struct as *mut _ as *mut c_void;

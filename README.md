@@ -8,7 +8,7 @@ This project is meant to evolve in something more complete and more complexe in 
 ## Setup
 
 ```bash
-apt install cpuidtool libcpuid-dev
+apt install cpuidtool cpuidtool libcpuid-dev
 ```
 
 - copy `configs/exemple.config` into your `/etc`

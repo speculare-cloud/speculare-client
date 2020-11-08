@@ -24,14 +24,9 @@ pub fn get_hostname() -> String {
 
 /// Return the uptime of the current host.
 /// In seconds and as i64 due to the database not handling u64.
-#[cfg(target_os = "linux")]
 pub fn get_uptime() -> i64 {
     match host::uptime() {
         Ok(val) => val.as_secs() as i64,
         Err(_) => 0,
     }
-}
-#[cfg(target_os = "macos")]
-pub fn get_uptime() -> i64 {
-    todo!()
 }

@@ -3,7 +3,7 @@ use crate::models;
 use models::LoadAvg;
 use psutil::host;
 
-/// Return the avg cpu_freq across all core as i64
+/// Return the avg cpu_freq across all core as i64.
 pub fn get_avg_cpufreq() -> i64 {
     match cpuid::clock_frequency() {
         Some(val) => val.into(),
@@ -11,7 +11,7 @@ pub fn get_avg_cpufreq() -> i64 {
     }
 }
 
-/// Return LoadAvg struct containing the 1, 5 and 15 percentil cpu average load
+/// Return LoadAvg struct containing the 1, 5 and 15 percentil cpu average load.
 #[cfg(target_os = "linux")]
 pub fn get_avg_load() -> LoadAvg {
     let load_avg = host::loadavg().unwrap();

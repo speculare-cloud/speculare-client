@@ -12,8 +12,8 @@ use process::collect_and_send;
 use std::{thread, time::Duration};
 use utils::syslog;
 
-/// Main which start the process and loop indefinietly
-/// No other way to stop it than killing the process
+/// Main which start the process and loop indefinietly.
+/// No other way to stop it than killing the process.
 fn main() {
     // Load the config into the env to use accross the prog
     let dotenv = dotenv::from_path("/etc/speculare.config");

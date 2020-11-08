@@ -134,10 +134,9 @@ extern "C" {
     pub fn getutxent() -> *mut c_void;
 }
 
-/// Get the currently logged user from /var/run/utmp
-/// UTMP Struct is the same as the one from C utmp.h
-/// The check to see if the utmp struct is from a user respect the C standarts
-/// ut_type == USER_PROCESS == 7
+/// Get the currently logged user from /var/run/utmp.
+/// UTMP Struct is the same as the one from C utmp.h.
+/// The check to see if the utmp struct is from a user respect the C standarts.
 #[cfg(target_os = "linux")]
 pub fn get_users() -> Vec<String> {
     let mut users: Vec<String> = Vec::new();
@@ -169,7 +168,7 @@ pub fn get_users() -> Vec<String> {
 /// MacOS implement this a bit differently than linux.
 /// So this version uses MacOS's function [setutxent, getutxent].
 /// This function will take approx 0,170s to run the first time as
-/// setutxent & getutxent need to open the file and create the static
+/// setutxent & getutxent need to open the file and create the static.
 #[cfg(target_os = "macos")]
 pub fn get_users() -> Vec<String> {
     let mut users: Vec<String> = Vec::new();
@@ -198,7 +197,7 @@ pub fn get_users() -> Vec<String> {
     users
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(target_family = "windows")]
 pub fn get_utmp() -> Vec<String> {
     todo!()
 }

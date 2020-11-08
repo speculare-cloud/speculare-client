@@ -3,7 +3,7 @@ use crate::models;
 use models::Disks;
 use psutil::disk;
 
-/// Retrieve the disks and return them as a Vec<Disks>
+/// Retrieve the disks and return them as a Vec<Disks>.
 pub fn get_disks_data() -> Vec<Disks> {
     let partitions = disk::partitions_physical().unwrap();
     let mut vdisks: Vec<Disks> = Vec::with_capacity(partitions.len());

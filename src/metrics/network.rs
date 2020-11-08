@@ -3,8 +3,9 @@ use crate::utils;
 use std::process::Command;
 use utils::syslog;
 
-/// Return the default interface on Linux
-/// SLOW
+/// Return the default interface on Linux.
+/// 
+/// SLOW.
 #[cfg(target_os = "linux")]
 fn get_default_interface() -> String {
     let interface = Command::new("bash")
@@ -15,8 +16,9 @@ fn get_default_interface() -> String {
     String::from_utf8_lossy(&interface.stdout).to_string()
 }
 
-/// Return the default interface on MacOS
-/// SLOW
+/// Return the default interface on MacOS.
+/// 
+/// SLOW.
 #[cfg(target_os = "macos")]
 fn get_default_interface() -> String {
     let interface = Command::new("bash")
@@ -27,10 +29,10 @@ fn get_default_interface() -> String {
     String::from_utf8_lossy(&interface.stdout).to_string()
 }
 
-/// Get the MAC Address (MacOS/Linux) in a safe String
-/// Capture the error and send it to sentry + print it
-/// WARNING - This function is slow due to the call with Command from get_default_interface
-#[cfg(target_os = "linux")]
+/// Get the MAC Address (MacOS/Linux) in a safe String.
+/// 
+/// WARNING - This function is slow due to the call with Command from get_default_interface.
+#[cfg(target_family = "unix")]
 pub fn get_mac_address() -> String {
     match mac_address::mac_address_by_name(&get_default_interface()) {
         Ok(Some(val)) => val.to_string(),
@@ -42,10 +44,10 @@ pub fn get_mac_address() -> String {
     }
 }
 
-/// Get the MAC Address (Windows) in a safe String
-/// Capture the error and send it to sentry + print it
-/// WARNING - This function is slow due to the call with Command from get_default_interface
-#[cfg(target_os = "windows")]
+/// Get the MAC Address (Windows) in a safe String.
+/// 
+/// WARNING - This function is slow due to the call with Command from get_default_interface.
+#[cfg(target_family = "windows")]
 pub fn get_mac_address() -> String {
     match mac_address::get_mac_address() {
         Ok(Some(val)) => val.to_string(),

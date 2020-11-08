@@ -3,7 +3,7 @@ use crate::models;
 use models::Memory;
 use psutil::memory;
 
-/// Retrieve the Memory from Virt and Swap and return them as a Memory
+/// Retrieve the Memory from Virt and Swap and return them as a Memory.
 pub fn get_memory() -> Memory {
     let (total_virt, avail_virt) = match memory::virtual_memory() {
         Ok(val) => (val.total() as i64, val.available() as i64),

@@ -9,7 +9,7 @@ use reqwest::blocking::Client;
 use std::error::Error;
 use utils::syslog;
 
-/// Collect all the metrics and send them to the server instance
+/// Collect all the metrics and send them to the server instance.
 pub fn collect_and_send(client: &Client, url: &str) -> Result<(), Box<dyn Error>> {
     // Construct the Data structure with all the info needed
     let dyndata = DynData {

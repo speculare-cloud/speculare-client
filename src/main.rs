@@ -21,10 +21,6 @@ use std::{thread, time::Duration};
 /// No other way to stop it than killing the process.
 #[cfg(not(windows))]
 fn main() {
-    dbg!(metrics_rs::miscs::get_os_version());
-
-    return;
-
     // Define log as info for debug and error for prod
     let dbg_level = if cfg!(debug_assertions) {
         "info"

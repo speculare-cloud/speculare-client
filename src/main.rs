@@ -1,3 +1,5 @@
+#![feature(test)]
+extern crate test;
 #[macro_use]
 extern crate text_io;
 #[macro_use]
@@ -7,26 +9,32 @@ extern crate dirs;
 extern crate libc;
 extern crate mac_address;
 extern crate reqwest;
+extern crate sys_info;
 
 mod config_mode;
-mod metrics;
-mod models;
 mod process;
-mod utils;
 
-use models::Config;
+use metrics_rs::models::Config;
 use process::collect_and_send;
 use std::fs::File;
 use std::io::BufReader;
 use std::{thread, time::Duration};
-use utils::syslog;
 
 /// Main which start the process and loop indefinietly.
 /// No other way to stop it than killing the process.
 #[cfg(not(windows))]
 fn main() {
+
+    dbg!(metrics_rs::miscs::get_os_version());
+
+    return;
+
     // Define log as info for debug and error for prod
-    let dbg_level = if cfg!(debug_assertions) { "info" } else { "error" };
+    let dbg_level = if cfg!(debug_assertions) {
+        "info"
+    } else {
+        "error"
+    };
     std::env::set_var("RUST_LOG", dbg_level);
     // Init the logger
     env_logger::init();
@@ -37,7 +45,9 @@ fn main() {
         config_mode::entry_point();
         return;
     } else if args.len() == 2 {
-        error!("Wrong number of paramters or wrong parameters.\nUse with --config or no paramters.");
+        error!(
+            "Wrong number of paramters or wrong parameters.\nUse with --config or no paramters."
+        );
         return;
     }
 
@@ -81,7 +91,7 @@ fn main() {
     loop {
         match collect_and_send(&client, &config) {
             Ok(x) => x,
-            Err(x) => syslog(x.to_string(), false, true),
+            Err(x) => warn!("Error when collect_and_send: {}", x),
         };
         // Sleep for the interval defined above
         // don't spam the CPU nor the server

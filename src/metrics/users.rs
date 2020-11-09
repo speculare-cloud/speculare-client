@@ -1,4 +1,7 @@
-use libc::{c_char, c_int, c_short, c_void, pid_t, size_t};
+#[cfg(target_os = "macos")]
+use libc::{c_char, c_short, c_void, getutxent, pid_t, setutxent};
+#[cfg(target_os = "linux")]
+use libc::{c_char, c_short, c_void, pid_t, read};
 use std::fs::File;
 use std::mem;
 use std::os::unix::prelude::*;
@@ -125,15 +128,6 @@ impl Default for utmpx {
     }
 }
 
-extern "C" {
-    #[cfg(target_os = "linux")]
-    pub fn read(fd: c_int, buf: *mut c_void, count: size_t) -> usize;
-    #[cfg(target_os = "macos")]
-    pub fn setutxent() -> c_void;
-    #[cfg(target_os = "macos")]
-    pub fn getutxent() -> *mut c_void;
-}
-
 /// Get the currently logged user from /var/run/utmp.
 /// UTMP Struct is the same as the one from C utmp.h.
 /// The check to see if the utmp struct is from a user respect the C standarts.
@@ -198,6 +192,6 @@ pub fn get_users() -> Vec<String> {
 }
 
 #[cfg(target_family = "windows")]
-pub fn get_utmp() -> Vec<String> {
+pub fn get_users() -> Vec<String> {
     todo!()
 }

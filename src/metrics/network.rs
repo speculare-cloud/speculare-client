@@ -1,7 +1,5 @@
-use crate::utils;
-
+use log::warn;
 use std::process::Command;
-use utils::syslog;
 
 /// Return the default interface on Linux.
 ///
@@ -38,7 +36,7 @@ pub fn get_mac_address() -> String {
         Ok(Some(val)) => val.to_string(),
         Ok(None) => String::from("unknown"),
         Err(x) => {
-            syslog(x.to_string(), false, true);
+            warn!("Error getting mac address: {}", x);
             String::from("unknown")
         }
     }
@@ -53,7 +51,7 @@ pub fn get_mac_address() -> String {
         Ok(Some(val)) => val.to_string(),
         Ok(None) => String::from("unknown"),
         Err(x) => {
-            syslog(x.to_string(), false, true);
+            warn!("Error getting mac address: {}", x);
             String::from("unknown")
         }
     }

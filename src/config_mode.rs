@@ -1,6 +1,4 @@
-use crate::models;
-
-use models::Config;
+use metrics_rs::models::Config;
 use std::io::{self, Write};
 
 pub fn entry_point() {

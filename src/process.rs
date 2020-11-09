@@ -1,13 +1,8 @@
-use crate::metrics;
-use crate::models;
-use crate::utils;
-
 use log::info;
-use metrics::{cpu::*, disks::*, memory::get_memory, miscs::*, sensors::*};
-use models::{Config, DynData};
+use metrics_rs::models::{Config, DynData};
+use metrics_rs::{cpu::*, disks::*, memory::*, miscs::*, sensors::*};
 use reqwest::blocking::Client;
 use std::error::Error;
-use utils::syslog;
 
 /// Collect all the metrics and send them to the server instance.
 pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Box<dyn Error>> {

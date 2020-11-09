@@ -4,10 +4,10 @@ use psutil::host;
 /// Take approx 0,080ms to load the info 'os_info::get()'.
 /// But it's okay since we'll only call this function once in a while.
 pub fn get_os_version() -> String {
-    let info = os_info::get();
-    let mut os_version = info.os_type().to_string();
-    os_version.push_str(&info.version().to_string());
-    os_version
+    match host::get_os_info() {
+        Ok(val) => val.pretty_name,
+        Err(_) => String::from("unknown")
+    }
 }
 
 /// Get the machine UUID (Mac/Linux/Windows) as a String.
@@ -16,9 +16,7 @@ pub fn get_os_version() -> String {
 pub fn get_uuid() -> String {
     match host::get_machine_id() {
         Ok(val) => val,
-        Err(x) => {
-            panic!("Can't get the machine uuid: {}", x)
-        }
+        Err(x) => panic!("Can't get the machine uuid: {}", x),
     }
 }
 

@@ -11,10 +11,15 @@ pub fn get_os_version() -> String {
 }
 
 /// Get the machine UUID (Mac/Linux/Windows) as a String.
-///
-/// TODO
+/// This one is slow as the underlying lib invoke a shell command
+/// if the host os is Mac. Else it will read it from /etc/machine-id or /var/lib/dbus/machine-id.
 pub fn get_uuid() -> String {
-    todo!()
+    match host::get_machine_id() {
+        Ok(val) => val,
+        Err(x) => {
+            panic!("Can't get the machine uuid: {}", x)
+        }
+    }
 }
 
 /// Get the hostname (Mac/Linux/Windows) in a safe String.

@@ -18,6 +18,13 @@ jobs:
     - name: Install libcpuid
       run: sudo apt-get install cpuidtool libcpuid-dev
     - uses: actions/checkout@v2
+    - name: Cache Rust dependencies
+      uses: actions/cache@v1.0.1
+      with:
+        path: target
+        key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.OS }}-build-
     - name: Build
       run: cargo build --verbose
     - name: Run tests

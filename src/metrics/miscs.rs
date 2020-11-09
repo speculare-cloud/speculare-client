@@ -20,16 +20,16 @@ pub fn get_os_version() -> String {
             Ok(xval) => {
                 base.push_str(&xval);
                 base
-            },
+            }
             Err(_) => {
                 base.push_str(&"?");
                 base
-            },
+            }
         },
         Err(_) => {
             base.push_str(&"?");
             base
-        },
+        }
     }
 }
 

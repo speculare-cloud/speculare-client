@@ -33,7 +33,7 @@ fn main() {
 
     // Detect if we should run in init config mode
     let args: Vec<String> = std::env::args().collect();
-    if args.len() == 2 && args[1] == "config" {
+    if args.len() == 2 && args[1] == "--config" {
         config_mode::entry_point();
         return;
     } else if args.len() == 2 {

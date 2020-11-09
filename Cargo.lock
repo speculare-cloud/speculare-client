@@ -799,7 +799,7 @@ dependencies = [
 [[package]]
 name = "psutil"
 version = "3.2.0"
-source = "git+https://github.com/Martichou/rust-psutil#45e91ab884b58a7bce8f1cbc1b54daf008e4f9db"
+source = "git+https://github.com/Martichou/rust-psutil#b3579c7e4cd551df142226138e327c7e6b74ec88"
 dependencies = [
  "cfg-if 0.1.10",
  "darwin-libproc",

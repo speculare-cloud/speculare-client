@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 
-sys-info = "0.7"
+sysctl = "0.4.0"
 
 dirs = "3.0.1"
 log = "0.4.11"

@@ -9,8 +9,5 @@ pub fn miscs_benches(c: &mut Criterion) {
     c.bench_function("get_uptime", |b| b.iter(|| get_uptime()));
 }
 
-criterion_group!(
-    benches,
-    miscs_benches
-);
+criterion_group!(benches, miscs_benches);
 criterion_main!(benches);

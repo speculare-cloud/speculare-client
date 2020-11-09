@@ -7,7 +7,6 @@ extern crate dirs;
 extern crate libc;
 extern crate mac_address;
 extern crate reqwest;
-extern crate sys_info;
 
 mod config_mode;
 mod process;
@@ -22,7 +21,6 @@ use std::{thread, time::Duration};
 /// No other way to stop it than killing the process.
 #[cfg(not(windows))]
 fn main() {
-
     dbg!(metrics_rs::miscs::get_os_version());
 
     return;

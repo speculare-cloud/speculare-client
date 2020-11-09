@@ -4,7 +4,7 @@ use models::Config;
 use std::io::{self, Write};
 
 pub fn entry_point() {
-    print!("What is your api_token ?\n > ");
+    print!("\nWhat is your api_token ?\n > ");
     io::stdout().flush().unwrap();
     let api_token: String = read!("{}\n");
     print!("What is your api_url ?\n > ");
@@ -24,5 +24,5 @@ pub fn entry_point() {
         error!("Can't write file to {}\nError: {:?}", &path, res.err());
         return;
     }
-    println!("The config has been written at {}/speculare.config", home);
+    println!("\nThe config has been written at {}/speculare.config", home);
 }

@@ -1,24 +1,34 @@
-# Speculare client
+Speculare client
+========
+![CI](https://img.shields.io/github/workflow/status/Martichou/speculare-client/Rust)
+[![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](LICENSE)
 
-Speculare client is intended to report some 'usefull' data to the Speculare server in order
-to manage our iMac more efficiently.
+Speculare client (SP from now on) real-time monitoring Agent collects a lot of metrics from systems, hardware, VM, and applications with the least configuration possible. It runs permanently on your servers, computers, etc.
 
-This project is meant to evolve in something more complete and more complexe in a somewhat near future.
+You can install SP on almost every platform (Linux, macOS, Windows).
+As things stand, SP is still in heavy development and is expected to become much more complex and complete over time.
 
-## Setup
+Download
+--------------------------
 
-- install libcpuid dependency
+You can find lastest versioned archives [here](https://github.com/Martichou/speculare-client/releases), with binaries for all platforms.
+
+### Configurations
 ```bash
-apt install cpuidtool cpuidtool libcpuid-dev
+➜  ~ speculare-client --config
 ```
-- run (to init .config)
-```
-/path/to/speculare --config
-```
-- or copy `configs/exemple.config` into your `$HOME/speculare.config`
+<img src="assets/speculare_config.svg" width="100%">
+
+Configuring after checkout (dev)
+--------------------------
+
+- install [libcpuid](https://github.com/anrieff/libcpuid) dependency
+- run it and create the config file
 ```bash
-cp configs/exemple.config /etc/speculare.config
+➜  ~ cargo run --config
 ```
 
-## Contributing
+Contributing
+--------------------------
+
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

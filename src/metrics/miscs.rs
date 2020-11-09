@@ -14,12 +14,22 @@ pub fn get_os_version() -> String {
 }
 #[cfg(target_os = "macos")]
 pub fn get_os_version() -> String {
+    let mut base = String::from("macOS ");
     match sysctl::Ctl::new("kern.osproductversion") {
         Ok(val) => match val.value_string() {
-            Ok(xval) => xval,
-            Err(_) => String::from("?"),
+            Ok(xval) => {
+                base.push_str(&xval);
+                base
+            },
+            Err(_) => {
+                base.push_str(&"?");
+                base
+            },
         },
-        Err(_) => String::from("?"),
+        Err(_) => {
+            base.push_str(&"?");
+            base
+        },
     }
 }
 

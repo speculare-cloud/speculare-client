@@ -23,6 +23,7 @@ use utils::syslog;
 
 /// Main which start the process and loop indefinietly.
 /// No other way to stop it than killing the process.
+#[cfg(not(windows))]
 fn main() {
     // Define log as info for debug and error for prod
     let dbg_level = if cfg!(debug_assertions) { "info" } else { "error" };

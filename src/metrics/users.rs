@@ -1,5 +1,5 @@
 #[cfg(target_os = "macos")]
-use libc::{c_char, c_short, c_void, getutxent, pid_t, setutxent};
+use libc::{c_char, c_short, c_void, getutxent, pid_t, setutxent, utmpx};
 #[cfg(target_os = "linux")]
 use libc::{c_char, c_short, c_void, pid_t, read};
 use std::fs::File;
@@ -128,9 +128,9 @@ impl Default for utmpx {
     }
 }
 
-/// Get the currently logged user from /var/run/utmp.
-/// UTMP Struct is the same as the one from C utmp.h.
-/// The check to see if the utmp struct is from a user respect the C standarts.
+// /// Get the currently logged user from /var/run/utmp.
+// /// UTMP Struct is the same as the one from C utmp.h.
+// /// The check to see if the utmp struct is from a user respect the C standarts.
 #[cfg(target_os = "linux")]
 pub fn get_users() -> Vec<String> {
     let mut users: Vec<String> = Vec::new();
@@ -166,8 +166,7 @@ pub fn get_users() -> Vec<String> {
 #[cfg(target_os = "macos")]
 pub fn get_users() -> Vec<String> {
     let mut users: Vec<String> = Vec::new();
-    let mut utmpx_struct: utmpx = Default::default();
-    let mut buffer: *mut c_void = &mut utmpx_struct as *mut _ as *mut c_void;
+    let mut buffer: *mut utmpx = unsafe { mem::zeroed() };
 
     unsafe {
         setutxent();

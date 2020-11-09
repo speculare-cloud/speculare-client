@@ -59,20 +59,6 @@ pub struct utmp {
     pub __glibc_reserved: [c_char; 20],
 }
 
-#[repr(C)]
-#[derive(Debug)]
-#[cfg(target_os = "macos")]
-pub struct utmpx {
-    pub ut_user: [c_char; _UTX_USERSIZE],
-    pub ut_id: [c_char; _UTX_IDSIZE],
-    pub ut_line: [c_char; _UTX_LINESIZE],
-    pub ut_pid: pid_t,
-    pub ut_type: c_short,
-    pub ut_tv: ut_tv,
-    pub ut_host: [c_char; _UTX_HOSTSIZE],
-    pub __glibc_reserved: [c_char; 16],
-}
-
 #[cfg(target_os = "linux")]
 impl Default for exit_status {
     fn default() -> exit_status {
@@ -108,22 +94,6 @@ impl Default for utmp {
             ut_tv: Default::default(),
             ut_addr_v6: [0; 4],
             __glibc_reserved: [0; 20],
-        }
-    }
-}
-
-#[cfg(target_os = "macos")]
-impl Default for utmpx {
-    fn default() -> utmpx {
-        utmpx {
-            ut_type: 0,
-            ut_pid: 0,
-            ut_line: [0; _UTX_LINESIZE],
-            ut_id: [0; _UTX_IDSIZE],
-            ut_user: [0; _UTX_USERSIZE],
-            ut_host: [0; _UTX_HOSTSIZE],
-            ut_tv: Default::default(),
-            __glibc_reserved: [0; 16],
         }
     }
 }

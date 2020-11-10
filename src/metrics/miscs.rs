@@ -1,36 +1,12 @@
+use nix::sys;
 use psutil::host;
-#[cfg(target_os = "macos")]
-use sysctl::Sysctl;
 
 /// Get the os version (Mac/Linux/Windows) in a safe String.
 /// Take approx 0,080ms to load the info 'os_info::get()'.
 /// But it's okay since we'll only call this function once in a while.
-#[cfg(target_os = "linux")]
 pub fn get_os_version() -> String {
-    match host::get_os_info() {
-        Ok(val) => val.pretty_name,
-        Err(_) => String::from("unknown"),
-    }
-}
-#[cfg(target_os = "macos")]
-pub fn get_os_version() -> String {
-    let mut base = String::from("macOS ");
-    match sysctl::Ctl::new("kern.osproductversion") {
-        Ok(val) => match val.value_string() {
-            Ok(xval) => {
-                base.push_str(&xval);
-                base
-            }
-            Err(_) => {
-                base.push_str(&"?");
-                base
-            }
-        },
-        Err(_) => {
-            base.push_str(&"?");
-            base
-        }
-    }
+    let x = sys::utsname::uname();
+    x.sysname().to_string() + &" " + &x.release()
 }
 
 /// Get the machine UUID (Mac/Linux/Windows) as a String.

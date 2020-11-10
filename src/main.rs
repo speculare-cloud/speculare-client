@@ -2,11 +2,6 @@
 extern crate text_io;
 #[macro_use]
 extern crate log;
-extern crate cpuid;
-extern crate dirs;
-extern crate libc;
-extern crate mac_address;
-extern crate reqwest;
 
 mod config_mode;
 mod process;

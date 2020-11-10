@@ -98,9 +98,9 @@ impl Default for utmp {
     }
 }
 
-// /// Get the currently logged user from /var/run/utmp.
-// /// UTMP Struct is the same as the one from C utmp.h.
-// /// The check to see if the utmp struct is from a user respect the C standarts.
+/// Get the currently logged user from /var/run/utmp.
+/// UTMP Struct is the same as the one from C utmp.h.
+/// The check to see if the utmp struct is from a user respect the C standarts.
 #[cfg(target_os = "linux")]
 pub fn get_users() -> Vec<String> {
     let mut users: Vec<String> = Vec::new();

@@ -1,6 +1,6 @@
-use log::info;
-use metrics_rs::models::{Config, DynData};
-use metrics_rs::{cpu::*, disks::*, memory::*, miscs::*, sensors::*};
+use crate::models::{Config, DynData};
+
+use metrics_rs::{cpu::*, disks::*, memory::*, miscs::*, sensors::*, users::*};
 use reqwest::blocking::Client;
 use std::error::Error;
 
@@ -15,6 +15,7 @@ pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Box<dyn 
         sensors: get_sensors_data(),
         disks: get_disks_data(),
         memory: get_memory(),
+        users: get_users(),
     };
 
     dbg!(dyndata);

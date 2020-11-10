@@ -4,9 +4,10 @@ extern crate text_io;
 extern crate log;
 
 mod config_mode;
+mod models;
 mod process;
 
-use metrics_rs::models::Config;
+use models::Config;
 use process::collect_and_send;
 use std::fs::File;
 use std::io::BufReader;

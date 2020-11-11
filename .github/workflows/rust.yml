@@ -10,14 +10,15 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  check:
     runs-on: ubuntu-20.04
-
     steps:
     - name: Install libcpuid
       run: sudo apt-get install cpuidtool libcpuid-dev
-    - uses: actions/checkout@v2
+    
+    - name: Checkout source
+      uses: actions/checkout@v2
+    
     - name: Cache Rust dependencies
       uses: actions/cache@v1.0.1
       with:
@@ -25,11 +26,78 @@ jobs:
         key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
           ${{ runner.OS }}-build-
+
     - name: Update cargo
       run: cargo update
+
     - name: Build
-      run: cargo build
+      run: cargo check
+
+  fmt:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Install libcpuid
+      run: sudo apt-get install cpuidtool libcpuid-dev
+    
+    - name: Checkout source
+      uses: actions/checkout@v2
+    
+    - name: Cache Rust dependencies
+      uses: actions/cache@v1.0.1
+      with:
+        path: target
+        key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.OS }}-build-
+
+    - name: Update cargo
+      run: cargo update
+
+    - name: Format
+      run: cargo fmt --all -- --check
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Install libcpuid
+      run: sudo apt-get install cpuidtool libcpuid-dev
+    
+    - name: Checkout source
+      uses: actions/checkout@v2
+    
+    - name: Cache Rust dependencies
+      uses: actions/cache@v1.0.1
+      with:
+        path: target
+        key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.OS }}-build-
+
+    - name: Update cargo
+      run: cargo update
+
     - name: Run tests
       run: cargo test
+
+  bench:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Install libcpuid
+      run: sudo apt-get install cpuidtool libcpuid-dev
+    
+    - name: Checkout source
+      uses: actions/checkout@v2
+    
+    - name: Cache Rust dependencies
+      uses: actions/cache@v1.0.1
+      with:
+        path: target
+        key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.OS }}-build-
+
+    - name: Update cargo
+      run: cargo update
+
     - name: Run benches
       run: cargo bench

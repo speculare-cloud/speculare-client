@@ -12,12 +12,14 @@ pub fn get_sensors_data() -> Vec<Sensors> {
         .filter_map(Result::ok)
         .collect();
     let mut sensors: Vec<Sensors> = Vec::with_capacity(temperatures.len());
+
     for temp in temperatures {
         sensors.push(Sensors {
             label: temp.label().unwrap_or("?").to_owned(),
             temp: temp.current().celsius(),
         })
     }
+
     sensors
 }
 

@@ -125,6 +125,7 @@ pub fn get_users() -> Vec<String> {
             }
         }
     }
+
     users
 }
 
@@ -158,6 +159,7 @@ pub fn get_users() -> Vec<String> {
             buffer = getutxent();
         }
     }
+    
     users
 }
 

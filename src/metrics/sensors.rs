@@ -14,7 +14,7 @@ pub fn get_sensors_data() -> Vec<Sensors> {
     let mut sensors: Vec<Sensors> = Vec::with_capacity(temperatures.len());
     for temp in temperatures {
         sensors.push(Sensors {
-            label: temp.label().unwrap_or("?").to_string(),
+            label: temp.label().unwrap_or("?").to_owned(),
             temp: temp.current().celsius(),
         })
     }
@@ -23,5 +23,5 @@ pub fn get_sensors_data() -> Vec<Sensors> {
 
 #[cfg(not(target_os = "linux"))]
 pub fn get_sensors_data() -> Vec<Sensors> {
-    Vec::new()
+    todo!()
 }

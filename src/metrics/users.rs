@@ -119,8 +119,9 @@ pub fn get_users() -> Vec<String> {
             if cuser[0] != 0 && cbuffer.ut_type == 7 {
                 let csuser = std::str::from_utf8(cuser)
                     .unwrap_or("unknown")
-                    .trim_matches('\0');
-                users.push(csuser.to_string());
+                    .trim_matches('\0')
+                    .to_owned();
+                users.push(csuser);
             }
         }
     }

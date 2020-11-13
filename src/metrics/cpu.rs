@@ -7,7 +7,7 @@ use std::io::{Error, ErrorKind};
 /// Return the avg cpu_freq across all core as i64.
 pub fn get_avg_cpufreq() -> i64 {
     match cpuid::clock_frequency() {
-        Some(val) => val.into(),
+        Some(val) => val as i64,
         None => 0,
     }
 }
@@ -21,6 +21,6 @@ pub fn get_avg_load() -> Result<LoadAvg, Error> {
             five: val.five,
             fifteen: val.fifteen,
         }),
-        Err(_) => Err(Error::new(ErrorKind::Other, "unsafe error, val returned")),
+        Err(x) => Err(Error::new(ErrorKind::Other, x)),
     }
 }

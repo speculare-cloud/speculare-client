@@ -8,7 +8,7 @@ use std::error::Error;
 pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Box<dyn Error>> {
     // Construct the Data structure with all the info needed
     let dyndata = DynData {
-        uuid: get_uuid(),
+        uuid: get_uuid().expect("Cannot retrieve UUID"),
         uptime: get_uptime(),
         cpu_freq: get_avg_cpufreq(),
         load_avg: match get_avg_load() {

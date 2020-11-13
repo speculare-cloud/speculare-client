@@ -5,7 +5,6 @@ use std::process::Command;
 ///
 /// SLOW.
 #[cfg(target_os = "linux")]
-#[inline]
 fn get_default_interface() -> String {
     let interface = Command::new("bash")
         .arg("-c")
@@ -19,7 +18,6 @@ fn get_default_interface() -> String {
 ///
 /// SLOW.
 #[cfg(target_os = "macos")]
-#[inline]
 fn get_default_interface() -> String {
     let interface = Command::new("bash")
         .arg("-c")

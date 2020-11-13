@@ -14,6 +14,10 @@ pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Box<dyn 
         load_avg: get_avg_load(),
         sensors: get_sensors_data(),
         disks: get_disks_data(),
+        iostats: match get_iostats() {
+            Ok(val) => Some(val),
+            Err(_) => None,
+        },
         memory: get_memory(),
         users: get_users(),
     };

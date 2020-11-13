@@ -15,6 +15,13 @@ pub struct Disks {
 }
 
 #[derive(Debug, Serialize)]
+pub struct IoStats {
+    pub device_name: String,
+    pub sectors_read: i64,
+    pub sectors_wrtn: i64,
+}
+
+#[derive(Debug, Serialize)]
 pub struct LoadAvg {
     pub one: f64,
     pub five: f64,

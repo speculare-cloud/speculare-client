@@ -43,8 +43,8 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
         }
         viostats.push(IoStats {
             device_name: fields[2].to_owned(),
-            sectors_read: fields[5].as_ptr() as i64,
-            sectors_wrtn: fields[9].as_ptr() as i64,
+            sectors_read: fields[5].parse::<i64>().unwrap(),
+            sectors_wrtn: fields[9].parse::<i64>().unwrap(),
         });
         buffer.clear();
     }

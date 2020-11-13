@@ -1,4 +1,4 @@
-use metrics_rs::models::{Disks, LoadAvg, Memory, Sensors};
+use metrics_rs::models::{Disks, IoStats, LoadAvg, Memory, Sensors};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,6 +23,7 @@ pub struct DynData {
     pub load_avg: LoadAvg,
     pub sensors: Vec<Sensors>,
     pub disks: Vec<Disks>,
+    pub iostats: Option<Vec<IoStats>>,
     pub memory: Memory,
     pub users: Vec<String>,
 }

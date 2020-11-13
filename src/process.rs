@@ -11,7 +11,10 @@ pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Box<dyn 
         uuid: get_uuid(),
         uptime: get_uptime(),
         cpu_freq: get_avg_cpufreq(),
-        load_avg: get_avg_load(),
+        load_avg: match get_avg_load() {
+            Ok(val) => Some(val),
+            Err(_) => None,
+        },
         sensors: get_sensors_data(),
         disks: get_disks_data(),
         iostats: match get_iostats() {

@@ -19,5 +19,5 @@ pub struct Data {
     pub disks: Vec<Disks>,
     pub iostats: Option<Vec<IoStats>>,
     pub memory: Memory,
-    pub users: Vec<String>,
+    pub users: Option<Vec<String>>,
 }

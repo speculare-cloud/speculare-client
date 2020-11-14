@@ -102,14 +102,14 @@ impl Default for utmp {
 /// UTMP Struct is the same as the one from C utmp.h.
 /// The check to see if the utmp struct is from a user respect the C standarts.
 #[cfg(target_os = "linux")]
-pub fn get_users() -> Vec<String> {
-    let mut users: Vec<String> = Vec::new();
+pub fn get_users() -> Option<Vec<String>> {
     let utmp_file = match File::open(UTMP_FILE_PATH) {
         Ok(val) => val,
-        Err(_) => return users,
+        Err(_) => return None,
     };
     let mut utmp_struct: utmp = Default::default();
     let buffer: *mut c_void = &mut utmp_struct as *mut _ as *mut c_void;
+    let mut users: Vec<String> = Vec::new();
 
     unsafe {
         while read(utmp_file.as_raw_fd(), buffer, mem::size_of::<utmp>()) != 0 {
@@ -126,7 +126,7 @@ pub fn get_users() -> Vec<String> {
         }
     }
 
-    users
+    Some(users)
 }
 
 /// Get the currently logged user from /var/run/utmpx (I suppose).
@@ -136,7 +136,7 @@ pub fn get_users() -> Vec<String> {
 /// This function will take approx 0,170s to run the first time as
 /// setutxent & getutxent need to open the file and create the static.
 #[cfg(target_os = "macos")]
-pub fn get_users() -> Vec<String> {
+pub fn get_users() -> Option<Vec<String>> {
     let mut users: Vec<String> = Vec::new();
     let mut buffer: *mut utmpx = unsafe { mem::zeroed() };
 
@@ -160,10 +160,10 @@ pub fn get_users() -> Vec<String> {
         }
     }
 
-    users
+    Some(users)
 }
 
 #[cfg(target_family = "windows")]
-pub fn get_users() -> Vec<String> {
+pub fn get_users() -> Option<Vec<String>> {
     todo!()
 }

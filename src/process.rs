@@ -15,7 +15,7 @@ pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Box<dyn 
             Ok(val) => Some(val),
             Err(_) => None,
         },
-        sensors: get_sensors_data(),
+        sensors: todo!(),
         disks: get_disks_data(),
         iostats: match get_iostats() {
             Ok(val) => Some(val),

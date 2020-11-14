@@ -28,6 +28,12 @@ pub struct LoadAvg {
     pub fifteen: f64,
 }
 
+#[derive(Debug)]
+pub struct HostInfo {
+    pub os_version: String,
+    pub hostname: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct Memory {
     pub total_virt: i64,

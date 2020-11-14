@@ -1,10 +1,7 @@
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
-use metrics_rs::sensors::*;
 
-pub fn sensors_benches(c: &mut Criterion) {
-    c.bench_function("get_sensors_data", |b| b.iter(|| get_sensors_data()));
-}
+pub fn sensors_benches(_c: &mut Criterion) {}
 
 criterion_group!(benches, sensors_benches);
 criterion_main!(benches);

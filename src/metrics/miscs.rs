@@ -1,5 +1,8 @@
+use crate::models;
+
 use nix::sys;
 use psutil::host;
+use models::HostInfo;
 use std::io::{Error, ErrorKind};
 
 /// Get the os version (Mac/Linux/Windows) in a safe String.
@@ -7,7 +10,22 @@ use std::io::{Error, ErrorKind};
 /// But it's okay since we'll only call this function once in a while.
 pub fn get_os_version() -> String {
     let x = sys::utsname::uname();
-    x.sysname().to_owned() + " " + x.release()
+    x.sysname().to_owned() + "/" + x.release()
+}
+
+/// Get the hostname (Mac/Linux/Windows) in a safe String.
+pub fn get_hostname() -> String {
+    let x = sys::utsname::uname();
+    x.nodename().to_owned()
+}
+
+/// Get both hostname and os_version from the same single uname instance.
+pub fn get_host_info() -> HostInfo {
+    let x = sys::utsname::uname();
+    HostInfo {
+        os_version: x.sysname().to_owned() + "/" + x.release(),
+        hostname: x.nodename().to_owned()
+    }
 }
 
 /// Get the machine UUID (Mac/Linux/Windows) as a String.
@@ -18,11 +36,6 @@ pub fn get_uuid() -> Result<String, Error> {
         Ok(val) => Ok(val),
         Err(x) => Err(Error::new(ErrorKind::Other, x)),
     }
-}
-
-/// Get the hostname (Mac/Linux/Windows) in a safe String.
-pub fn get_hostname() -> String {
-    host::info().hostname().to_owned()
 }
 
 /// Return the uptime of the current host.

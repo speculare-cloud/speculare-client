@@ -1,8 +1,8 @@
 use crate::models;
 
+use models::{HostInfo, LoadAvg, Memory};
 use nix::sys;
 use psutil::host;
-use models::HostInfo;
 use std::io::{Error, ErrorKind};
 
 /// Get the os version (Mac/Linux/Windows) in a safe String.
@@ -20,12 +20,29 @@ pub fn get_hostname() -> String {
 }
 
 /// Get both hostname and os_version from the same single uname instance.
-pub fn get_host_info() -> HostInfo {
+pub fn get_host_info() -> Result<HostInfo, Error> {
     let x = sys::utsname::uname();
-    HostInfo {
+    let y = match sys::sysinfo::sysinfo() {
+        Ok(val) => val,
+        Err(x) => return Err(Error::new(ErrorKind::Other, x)),
+    };
+    let loadavg = y.load_average();
+    Ok(HostInfo {
+        loadavg: LoadAvg {
+            one: loadavg.0,
+            five: loadavg.1,
+            fifteen: loadavg.2,
+        },
+        memory: Memory {
+            total_virt: y.ram_total() as i64,
+            total_swap: y.swap_total() as i64,
+            avail_virt: y.ram_unused() as i64,
+            avail_swap: y.swap_free() as i64,
+        },
+        uptime: y.uptime().as_secs() as i64,
         os_version: x.sysname().to_owned() + "/" + x.release(),
-        hostname: x.nodename().to_owned()
-    }
+        hostname: x.nodename().to_owned(),
+    })
 }
 
 /// Get the machine UUID (Mac/Linux/Windows) as a String.
@@ -35,14 +52,5 @@ pub fn get_uuid() -> Result<String, Error> {
     match host::get_machine_id() {
         Ok(val) => Ok(val),
         Err(x) => Err(Error::new(ErrorKind::Other, x)),
-    }
-}
-
-/// Return the uptime of the current host.
-/// In seconds and as i64 due to the database not handling u64.
-pub fn get_uptime() -> i64 {
-    match host::uptime() {
-        Ok(val) => val.as_secs() as i64,
-        Err(_) => 0,
     }
 }

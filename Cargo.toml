@@ -48,7 +48,7 @@ name = "disks_bench"
 harness = false
 
 [[bench]]
-name = "memory_bench"
+name = "global_bench"
 harness = false
 
 [[bench]]

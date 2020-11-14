@@ -8,19 +8,13 @@ pub struct Config {
 }
 
 #[derive(Debug, Serialize)]
-pub struct StaticData {
+pub struct Data {
     pub uuid: String,
     pub os: String,
     pub hostname: String,
-    pub mac_address: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct DynData {
-    pub uuid: String,
     pub uptime: i64,
     pub cpu_freq: i64,
-    pub load_avg: Option<LoadAvg>,
+    pub load_avg: LoadAvg,
     pub sensors: Vec<Sensors>,
     pub disks: Vec<Disks>,
     pub iostats: Option<Vec<IoStats>>,

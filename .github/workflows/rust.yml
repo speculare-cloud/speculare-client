@@ -13,14 +13,11 @@ jobs:
   check:
     runs-on: ubuntu-20.04
     steps:
-    - name: Install libcpuid
-      run: sudo apt-get install cpuidtool libcpuid-dev
-    
     - name: Checkout source
       uses: actions/checkout@v2
     
     - name: Cache Rust dependencies
-      uses: actions/cache@v1.0.1
+      uses: actions/cache@v2
       with:
         path: target
         key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
@@ -36,14 +33,11 @@ jobs:
   fmt:
     runs-on: ubuntu-20.04
     steps:
-    - name: Install libcpuid
-      run: sudo apt-get install cpuidtool libcpuid-dev
-    
     - name: Checkout source
       uses: actions/checkout@v2
     
     - name: Cache Rust dependencies
-      uses: actions/cache@v1.0.1
+      uses: actions/cache@v2
       with:
         path: target
         key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
@@ -58,15 +52,12 @@ jobs:
 
   test:
     runs-on: ubuntu-20.04
-    steps:
-    - name: Install libcpuid
-      run: sudo apt-get install cpuidtool libcpuid-dev
-    
+    steps:    
     - name: Checkout source
       uses: actions/checkout@v2
     
     - name: Cache Rust dependencies
-      uses: actions/cache@v1.0.1
+      uses: actions/cache@v2
       with:
         path: target
         key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
@@ -81,15 +72,12 @@ jobs:
 
   bench:
     runs-on: ubuntu-20.04
-    steps:
-    - name: Install libcpuid
-      run: sudo apt-get install cpuidtool libcpuid-dev
-    
+    steps:    
     - name: Checkout source
       uses: actions/checkout@v2
     
     - name: Cache Rust dependencies
-      uses: actions/cache@v1.0.1
+      uses: actions/cache@v2
       with:
         path: target
         key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}

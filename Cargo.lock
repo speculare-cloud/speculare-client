@@ -158,15 +158,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea221b5284a47e40033bf9b66f35f984ec0ea2931eb03505246cd27a963f981b"
 
 [[package]]
-name = "cpuid"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0c4b055219ace68cabfbb8071c4aad068565d11b67e092e151b17b9fd3bdba9"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "criterion"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1349,7 +1340,6 @@ dependencies = [
 name = "speculare-client"
 version = "0.1.0"
 dependencies = [
- "cpuid",
  "criterion",
  "dirs",
  "env_logger",

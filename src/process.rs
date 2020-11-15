@@ -17,7 +17,10 @@ pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Error> {
         os: host_info.os_version,
         hostname: host_info.hostname,
         uptime: host_info.uptime,
-        cpu_freq: get_avg_cpufreq(),
+        cpu_freq: match get_avg_cpufreq() {
+            Ok(val) => val as i64,
+            Err(_) => -1,
+        },
         load_avg: host_info.loadavg,
         sensors: get_sensors_data(),
         disks: get_disks_data(),

@@ -22,8 +22,7 @@ You can find lastest versioned archives [here](https://github.com/Martichou/spec
 Configuring after checkout (dev)
 --------------------------
 
-- install [libcpuid](https://github.com/anrieff/libcpuid) dependency
-- run it and create the config file
+- run speculare and create the config file
 ```bash
 ➜  ~ cargo run --config
 ```

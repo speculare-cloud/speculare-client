@@ -33,12 +33,13 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
         Err(x) => return Err(x),
     };
     let mut reader = BufReader::new(file);
-    let mut buffer = String::with_capacity(64);
+    let mut buffer = String::with_capacity(128);
     let mut viostats: Vec<IoStats> = Vec::new();
 
     while reader.read_line(&mut buffer).unwrap_or(0) > 0 {
         let fields = buffer.split_whitespace().collect::<Vec<&str>>();
         if fields.len() < 14 {
+            buffer.clear();
             continue;
         }
         viostats.push(IoStats {

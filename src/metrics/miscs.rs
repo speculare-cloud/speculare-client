@@ -99,9 +99,9 @@ pub fn get_host_info() -> Result<HostInfo, Error> {
         avail_swap: y.swap_free() as i64,
     };
     Ok(HostInfo {
-        loadavg: loadavg,
-        memory: memory,
-        uptime: uptime,
+        loadavg,
+        memory,
+        uptime,
         os_version: x.sysname().to_owned() + "/" + x.release(),
         hostname: x.nodename().to_owned(),
     })
@@ -121,9 +121,9 @@ pub fn get_host_info() -> Result<HostInfo, Error> {
         avail_swap: 0,
     };
     Ok(HostInfo {
-        loadavg: loadavg,
-        memory: memory,
-        uptime: uptime,
+        loadavg,
+        memory,
+        uptime,
         os_version: x.sysname().to_owned() + "/" + x.release(),
         hostname: x.nodename().to_owned(),
     })
@@ -168,7 +168,7 @@ pub fn get_uuid() -> Result<String, Error> {
                 std::ptr::null(),
                 0,
             );
-            if serial_number_cft != std::ptr::null() {
+            if !serial_number_cft.is_null() {
                 serial = serial_number_cft as CFStringRef;
             } else {
                 return Err(Error::new(ErrorKind::Other, "Cannot get serial_number_cft"));
@@ -178,7 +178,7 @@ pub fn get_uuid() -> Result<String, Error> {
                 serial_number = match CStr::from_ptr(buffer.as_ptr()).to_str() {
                     Ok(val) => {
                         hasher.input_str(val);
-                        hasher.result_str().to_owned()
+                        hasher.result_str()
                     }
                     Err(x) => return Err(Error::new(ErrorKind::Other, x)),
                 }

@@ -143,7 +143,7 @@ pub fn get_users() -> Option<Vec<String>> {
     unsafe {
         setutxent();
         buffer = getutxent();
-        while buffer != std::ptr::null_mut() {
+        while !buffer.is_null() {
             let cbuffer = &*(buffer as *mut utmpx) as &utmpx;
             let cuser = &*(&cbuffer.ut_user as *const [i8] as *const [u8]);
 

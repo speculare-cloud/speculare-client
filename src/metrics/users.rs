@@ -1,9 +1,11 @@
 #[cfg(target_os = "macos")]
-use libc::{c_char, c_short, c_void, getutxent, pid_t, setutxent, utmpx};
+use libc::{getutxent, setutxent, utmpx};
 #[cfg(target_os = "linux")]
 use libc::{c_char, c_short, c_void, pid_t, read};
+#[cfg(target_os = "linux")]
 use std::fs::File;
 use std::mem;
+#[cfg(target_os = "linux")]
 use std::os::unix::prelude::*;
 
 #[cfg(target_os = "linux")]
@@ -23,8 +25,6 @@ const _UTX_LINESIZE: usize = 32;
 const _UTX_IDSIZE: usize = 4;
 #[cfg(target_os = "macos")]
 const _UTX_HOSTSIZE: usize = 256;
-#[cfg(target_os = "macos")]
-static UTMPX_FILE_PATH: &str = "/var/run/utmpx";
 
 #[repr(C)]
 #[derive(Debug)]

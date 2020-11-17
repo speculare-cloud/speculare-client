@@ -9,6 +9,8 @@ use core_foundation_sys::{
     string::{CFStringGetCString, CFStringRef},
 };
 #[cfg(target_os = "macos")]
+use crypto::digest::Digest;
+#[cfg(target_os = "macos")]
 use io_kit_sys::*;
 #[cfg(target_os = "macos")]
 use libc::c_char;
@@ -23,8 +25,6 @@ use std::ffi::{CStr, CString};
 use std::io::{Error, ErrorKind};
 #[cfg(target_os = "macos")]
 use std::time::Duration;
-#[cfg(target_os = "macos")]
-use crypto::digest::Digest;
 
 /// Get the os version (Mac/Linux/Windows) in a safe String.
 /// Take approx 0,080ms to load the info 'os_info::get()'.
@@ -179,7 +179,7 @@ pub fn get_uuid() -> Result<String, Error> {
                     Ok(val) => {
                         hasher.input_str(val);
                         hasher.result_str().to_owned()
-                    },
+                    }
                     Err(x) => return Err(Error::new(ErrorKind::Other, x)),
                 }
             } else {

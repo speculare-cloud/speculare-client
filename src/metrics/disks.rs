@@ -52,3 +52,8 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
 
     Ok(viostats)
 }
+
+#[cfg(target_os = "macos")]
+pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
+    todo!()
+}

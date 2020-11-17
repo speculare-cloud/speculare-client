@@ -1,9 +1,19 @@
+use super::read_and_trim;
+
 use crate::models;
 
 use models::{HostInfo, LoadAvg, Memory};
 use nix::sys;
-use psutil::host;
 use std::io::{Error, ErrorKind};
+
+use io_kit_sys::*;
+use core_foundation_sys::base::CFTypeRef;
+use core_foundation_sys::string::CFStringRef;
+use io_kit_sys::types::io_registry_entry_t;
+use core_foundation_sys::base::CFAllocatorRef;
+use io_kit_sys::types::IOOptionBits;
+use std::ffi::CString;
+use libc::c_char;
 
 /// Get the os version (Mac/Linux/Windows) in a safe String.
 /// Take approx 0,080ms to load the info 'os_info::get()'.
@@ -45,12 +55,31 @@ pub fn get_host_info() -> Result<HostInfo, Error> {
     })
 }
 
-/// Get the machine UUID (Mac/Linux/Windows) as a String.
-/// This one is slow as the underlying lib invoke a shell command
-/// if the host os is Mac. Else it will read it from /etc/machine-id or /var/lib/dbus/machine-id.
+/// Get the machine UUID (Linux) as a String.
+/// LINUX => Will read it from /etc/machine-id or /var/lib/dbus/machine-id.
+#[cfg(target_os = "linux")]
 pub fn get_uuid() -> Result<String, Error> {
-    match host::get_machine_id() {
-        Ok(val) => Ok(val),
-        Err(x) => Err(Error::new(ErrorKind::Other, x)),
+    match read_and_trim("/etc/machine-id") {
+        Ok(machine_id) => Ok(machine_id),
+        Err(_) => Ok(read_and_trim("/var/lib/dbus/machine-id")?),
     }
+}
+#[cfg(target_os = "macos")]
+pub fn get_uuid() -> Result<String, Error> {
+    let mut serial: CFTypeRef = std::ptr::null();
+    unsafe {
+        // That's a u32
+        let IOPlatformExpertDevice = std::ffi::CString::new("IOPlatformExpertDevice").unwrap().as_ptr() as *const c_char;
+        let platformExpert = IOServiceGetMatchingService(0, IOServiceMatching(IOPlatformExpertDevice));
+        if platformExpert != 0 {
+            let kIOPlatformSerialNumberKey = std::ffi::CString::new("IOPlatformSerialNumber").unwrap().as_ptr() as *const c_char;
+            let serialNumberAsCFString: CFTypeRef = IORegistryEntryCreateCFProperty(platformExpert, CFSTR(kIOPlatformSerialNumberKey), std::ptr::null(), 0);
+            if serialNumberAsCFString != std::ptr::null() {
+                serial = serialNumberAsCFString as CFTypeRef;
+            }
+            IOObjectRelease(platformExpert);
+        }
+    };
+    dbg!(serial);
+    return Ok(unsafe {std::ffi::CStr::from_ptr(serial as *const _)}.to_string_lossy().to_string());
 }

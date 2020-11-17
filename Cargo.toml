@@ -20,6 +20,7 @@ reqwest = { version = "0.10", features = ["blocking", "json"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 io-kit-sys = "0.1.0"
+rust-crypto = "0.2.36"
 core-foundation-sys = "0.8.2"
 
 [dev-dependencies]

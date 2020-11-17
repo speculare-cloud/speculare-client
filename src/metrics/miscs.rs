@@ -136,7 +136,7 @@ pub fn get_uuid() -> Result<String, Error> {
         Err(_) => Ok(read_and_trim("/var/lib/dbus/machine-id")?),
     }
 }
-/// Get the machine UUID (macOS) as a String.
+/// Get the machine Serial Number (macOS) as a String.
 /// macOS => Will get it from some black magic extern C function.
 #[cfg(target_os = "macos")]
 pub fn get_uuid() -> Result<String, Error> {
@@ -172,8 +172,12 @@ pub fn get_uuid() -> Result<String, Error> {
                 return Err(Error::new(ErrorKind::Other, "Cannot get serial_number_cft"));
             }
             if CFStringGetCString(serial, buffer.as_ptr() as *mut c_char, 64, 134217984) != 0 {
+                let mut hasher = crypto::sha3::Sha3::sha3_256();
                 serial_number = match CStr::from_ptr(buffer.as_ptr()).to_str() {
-                    Ok(val) => val.to_owned(),
+                    Ok(val) => {
+                        hasher.input_str(val);
+                        hasher.result_str().to_owned()
+                    },
                     Err(x) => return Err(Error::new(ErrorKind::Other, x)),
                 }
             } else {

@@ -698,16 +698,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mac_address"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d9bb26482176bddeea173ceaa2acec85146d20cdcc631eafaf9d605d3d4fc23"
-dependencies = [
- "nix 0.19.0",
- "winapi 0.3.9",
-]
-
-[[package]]
 name = "mach"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -909,16 +899,6 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
-]
-
-[[package]]
-name = "os_info"
-version = "3.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2127a5da3c69035537febc04cd07008bb643653303b213a49b036d944531207"
-dependencies = [
- "log",
- "winapi 0.3.9",
 ]
 
 [[package]]
@@ -1372,9 +1352,7 @@ dependencies = [
  "io-kit-sys",
  "libc",
  "log",
- "mac_address",
  "nix 0.19.0",
- "os_info",
  "psutil",
  "reqwest",
  "serde",

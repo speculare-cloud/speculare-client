@@ -23,6 +23,8 @@ use std::ffi::{CStr, CString};
 use std::io::{Error, ErrorKind};
 #[cfg(target_os = "macos")]
 use std::time::Duration;
+#[cfg(target_os = "macos")]
+use crypto::digest::Digest;
 
 /// Get the os version (Mac/Linux/Windows) in a safe String.
 /// Take approx 0,080ms to load the info 'os_info::get()'.

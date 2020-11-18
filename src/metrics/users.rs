@@ -1,7 +1,7 @@
-#[cfg(target_os = "macos")]
-use libc::{getutxent, setutxent, utmpx};
 #[cfg(target_os = "linux")]
 use libc::{c_char, c_short, c_void, pid_t, read};
+#[cfg(target_os = "macos")]
+use libc::{getutxent, setutxent, utmpx};
 #[cfg(target_os = "linux")]
 use std::fs::File;
 use std::mem;
@@ -16,7 +16,6 @@ const UT_NAMESIZE: usize = 32;
 const UT_HOSTSIZE: usize = 256;
 #[cfg(target_os = "linux")]
 static UTMP_FILE_PATH: &str = "/var/run/utmp";
-
 #[cfg(target_os = "macos")]
 const _UTX_USERSIZE: usize = 256;
 #[cfg(target_os = "macos")]

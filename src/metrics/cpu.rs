@@ -1,12 +1,14 @@
-use std::{
-    fs::File,
-    io::{prelude::*, BufReader, Error},
-};
-
+#[cfg(target_os = "macos")]
+use libc::{c_uint, c_void, sysctl};
+#[cfg(target_family = "unix")]
+use std::io::Error;
 #[cfg(target_os = "macos")]
 use std::io::ErrorKind;
-#[cfg(target_os = "macos")]
-use libc::{c_uint, sysctl, c_void};
+#[cfg(target_os = "linux")]
+use std::{
+    fs::File,
+    io::{prelude::*, BufReader},
+};
 
 /// Return the avg (not yet a true avg) cpu_freq as f64.
 #[cfg(target_os = "linux")]

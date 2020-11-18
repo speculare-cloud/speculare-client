@@ -37,8 +37,8 @@ pub fn get_avg_cpufreq() -> Result<f64, Error> {
 }
 
 #[cfg(target_os = "macos")]
-pub fn get_avg_cpufreq_m() -> Result<f64, Error> {
-    let mut data: c_uint = unsafe { std::mem::zeroed() };
+pub fn get_avg_cpufreq() -> Result<f64, Error> {
+    let mut data: c_uint = 0;
     let mib = [6, 15];
     let ret = unsafe {
         sysctl(

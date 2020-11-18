@@ -15,8 +15,10 @@ text_io = "0.1.8"
 env_logger = "0.8.1"
 serde_json = "1.0.59"
 serde = { version = "1.0", features = ["derive"] }
-psutil = { git = "https://github.com/Martichou/rust-psutil" }
 reqwest = { version = "0.10", features = ["blocking", "json"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+unescape = "0.1.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 futures = "0.3.8"

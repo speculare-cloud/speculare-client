@@ -23,7 +23,7 @@ pub fn collect_and_send(_client: &Client, _config: &Config) -> Result<(), Error>
         },
         load_avg: host_info.loadavg,
         sensors: get_sensors_data(),
-        disks: match get_disks_data() {
+        disks: match get_partitions_info() {
             Ok(val) => Some(val),
             Err(_) => None,
         },

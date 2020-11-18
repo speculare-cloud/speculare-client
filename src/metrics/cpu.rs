@@ -13,26 +13,18 @@ use std::{
 /// Return the avg (not yet a true avg) cpu_freq as f64.
 #[cfg(target_os = "linux")]
 pub fn get_avg_cpufreq() -> Result<f64, Error> {
-    let file = match File::open("/proc/cpuinfo") {
-        Ok(val) => val,
-        Err(x) => return Err(x),
-    };
+    let file = File::open("/proc/cpuinfo")?;
+    let file = BufReader::with_capacity(1024, file);
 
-    let mut reader = BufReader::with_capacity(1024, file);
-    let mut buffer = String::with_capacity(1024);
-
-    while reader.read_line(&mut buffer).unwrap_or(0) > 0 {
-        let lenght = buffer.len();
-        if lenght > 7 && lenght < 48 && &buffer[..7] == "cpu MHz" {
-            match buffer[11..lenght - 1].parse::<f64>() {
+    for line in file.lines() {
+        let line = line.unwrap();
+        let lenght = line.len();
+        if lenght > 7 && lenght < 48 && &line[..7] == "cpu MHz" {
+            match line[11..lenght - 1].parse::<f64>() {
                 Ok(val) => return Ok(val),
-                Err(_) => {
-                    buffer.clear();
-                    continue;
-                }
+                Err(_) => continue,
             };
         }
-        buffer.clear();
     }
 
     Ok(-1.0)
@@ -42,6 +34,7 @@ pub fn get_avg_cpufreq() -> Result<f64, Error> {
 pub fn get_avg_cpufreq() -> Result<f64, Error> {
     let mut data: c_uint = 0;
     let mib = [6, 15];
+
     let ret = unsafe {
         sysctl(
             &mib[0] as *const _ as *mut _,
@@ -52,6 +45,7 @@ pub fn get_avg_cpufreq() -> Result<f64, Error> {
             0,
         )
     };
+
     if ret < 0 {
         Err(Error::new(ErrorKind::Other, "Invalid return for sysctl"))
     } else {

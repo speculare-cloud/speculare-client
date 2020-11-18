@@ -11,7 +11,7 @@ fn all_gather() {
     {
         let _uuid = get_uuid().expect("Cannot retrieve UUID");
         let _cpu_freq = get_avg_cpufreq();
-        let _disks = get_disks_data();
+        let _disks = get_partitions_info();
         let _iostats = match get_iostats() {
             Ok(val) => Some(val),
             Err(_) => None,

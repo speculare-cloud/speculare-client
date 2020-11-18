@@ -44,7 +44,7 @@ pub fn get_hostname() -> String {
 pub fn get_uptime() -> Result<Duration, Error> {
     let mut data: timeval = unsafe { std::mem::zeroed() };
     let mib = [1, 21];
-    
+
     let ret = unsafe {
         sysctl(
             &mib[0] as *const _ as *mut _,
@@ -66,14 +66,14 @@ pub fn get_uptime() -> Result<Duration, Error> {
 #[cfg(target_family = "unix")]
 pub fn get_loadavg() -> Result<LoadAvg, Error> {
     let mut data: [c_double; 3] = [0.0, 0.0, 0.0];
-    
+
     if unsafe { getloadavg(data.as_mut_ptr(), 3) } == -1 {
         return Err(Error::new(
             ErrorKind::Other,
             "Invalid return for getloadavg",
         ));
     }
-    
+
     Ok(LoadAvg {
         one: data[0],
         five: data[1],

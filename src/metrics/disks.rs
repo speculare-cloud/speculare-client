@@ -1,3 +1,5 @@
+use super::is_physical_filesys;
+
 use crate::models;
 
 #[cfg(target_os = "macos")]
@@ -5,56 +7,75 @@ use futures::executor;
 #[cfg(target_os = "macos")]
 use futures_util::stream::StreamExt;
 use models::{Disks, IoStats};
-use psutil::disk;
+use nix::sys;
 #[cfg(target_family = "unix")]
 use std::io::{Error, ErrorKind};
+use std::path::Path;
+use std::path::PathBuf;
 #[cfg(target_os = "linux")]
 use std::{
     fs::File,
-    io::{prelude::*, BufReader},
+    io::{BufRead, BufReader},
 };
+use unescape::unescape;
 
-/// Retrieve the disks and return them as a Vec<Disks>.
-// TODO - Implement it myself instead of using psutil
-// -> Will gain control over the optimization
-pub fn get_disks_data() -> Result<Vec<Disks>, Error> {
-    let partitions = match disk::partitions_physical() {
-        Ok(val) => val,
-        Err(x) => return Err(Error::new(ErrorKind::Other, x)),
-    };
-    let mut vdisks: Vec<Disks> = Vec::with_capacity(partitions.len());
+/// Retrieve the partitions and return them as a Vec<Disks>.
+/// Contains name, mount_point and total/free space.
+pub fn get_partitions_info() -> Result<Vec<Disks>, Error> {
+    let mut vdisks: Vec<Disks> = Vec::new();
+    let file = File::open("/proc/mounts")?;
+    let file = BufReader::with_capacity(6144, file);
 
-    for disk in partitions {
-        let mount = disk.mountpoint();
-        let disk_usage = match disk::disk_usage(mount) {
+    for line in file.lines() {
+        let line = line.unwrap();
+        let fields = line.split_whitespace().collect::<Vec<&str>>();
+        if !is_physical_filesys(fields[2]) {
+            continue;
+        }
+        let m_p = PathBuf::from(unescape(fields[1]).unwrap());
+        let usage: (u64, u64) = match disk_usage(&m_p) {
             Ok(val) => val,
-            Err(_) => continue,
+            Err(_) => (0, 0),
         };
         vdisks.push(Disks {
-            name: disk.device().to_string(),
-            mount_point: mount.display().to_string(),
-            total_space: (disk_usage.total() / 100000) as i64,
-            avail_space: (disk_usage.free() / 100000) as i64,
-        })
+            name: fields[0].to_owned(),
+            mount_point: m_p.into_os_string().into_string().unwrap(),
+            total_space: (usage.0 / 100000) as i64,
+            avail_space: (usage.1 / 100000) as i64,
+        });
     }
 
     Ok(vdisks)
 }
 
+/// Return the total/free space of a Disk from it's path (mount_point)
+pub fn disk_usage<P>(path: P) -> Result<(u64, u64), Error>
+where
+    P: AsRef<Path>,
+{
+    let statvfs = match sys::statvfs::statvfs(path.as_ref()) {
+        Ok(val) => val,
+        Err(x) => return Err(Error::new(ErrorKind::Other, x)),
+    };
+    let total = statvfs.blocks() as u64 * statvfs.fragment_size() as u64;
+    let free = statvfs.blocks_available() as u64 * statvfs.fragment_size() as u64;
+
+    Ok((total, free))
+}
+
+/// Return the disk io usage, number of sectors read, wrtn.
+/// From that you can compute the mb/s.
+/// LINUX -> Read data from /proc/diskstats.
 #[cfg(target_os = "linux")]
 pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
-    let file = match File::open("/proc/diskstats") {
-        Ok(val) => val,
-        Err(x) => return Err(x),
-    };
-    let mut reader = BufReader::new(file);
-    let mut buffer = String::with_capacity(128);
     let mut viostats: Vec<IoStats> = Vec::new();
+    let file = File::open("/proc/diskstats")?;
+    let file = BufReader::with_capacity(2048, file);
 
-    while reader.read_line(&mut buffer).unwrap_or(0) > 0 {
-        let fields = buffer.split_whitespace().collect::<Vec<&str>>();
+    for line in file.lines() {
+        let line = line.unwrap();
+        let fields = line.split_whitespace().collect::<Vec<&str>>();
         if fields.len() < 14 {
-            buffer.clear();
             continue;
         }
         viostats.push(IoStats {
@@ -62,12 +83,14 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
             sectors_read: fields[5].parse::<i64>().unwrap(),
             sectors_wrtn: fields[9].parse::<i64>().unwrap(),
         });
-        buffer.clear();
     }
 
     Ok(viostats)
 }
 
+/// Return the disk io usage, number of sectors read, wrtn.
+/// From that you can compute the mb/s.
+/// macOS -> Read data using heim_disks.
 #[cfg(target_os = "macos")]
 pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
     let mut viostats: Vec<IoStats> = Vec::new();

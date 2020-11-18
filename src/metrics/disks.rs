@@ -71,8 +71,8 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
 #[cfg(target_os = "macos")]
 pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
     let mut viostats: Vec<IoStats> = Vec::new();
-
     let mut counters = heim_disk::io_counters();
+
     while let Some(count) = executor::block_on(counters.next()) {
         let count = count.unwrap();
         viostats.push(IoStats {

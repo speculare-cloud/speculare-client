@@ -44,6 +44,7 @@ pub fn get_hostname() -> String {
 pub fn get_uptime() -> Result<Duration, Error> {
     let mut data: timeval = unsafe { std::mem::zeroed() };
     let mib = [1, 21];
+    
     let ret = unsafe {
         sysctl(
             &mib[0] as *const _ as *mut _,
@@ -54,6 +55,7 @@ pub fn get_uptime() -> Result<Duration, Error> {
             0,
         )
     };
+
     if ret < 0 {
         Err(Error::new(ErrorKind::Other, "Invalid return for sysctl"))
     } else {
@@ -64,12 +66,14 @@ pub fn get_uptime() -> Result<Duration, Error> {
 #[cfg(target_family = "unix")]
 pub fn get_loadavg() -> Result<LoadAvg, Error> {
     let mut data: [c_double; 3] = [0.0, 0.0, 0.0];
+    
     if unsafe { getloadavg(data.as_mut_ptr(), 3) } == -1 {
         return Err(Error::new(
             ErrorKind::Other,
             "Invalid return for getloadavg",
         ));
     }
+    
     Ok(LoadAvg {
         one: data[0],
         five: data[1],
@@ -98,6 +102,7 @@ pub fn get_host_info() -> Result<HostInfo, Error> {
         avail_virt: y.ram_unused() as i64,
         avail_swap: y.swap_free() as i64,
     };
+
     Ok(HostInfo {
         loadavg,
         memory,
@@ -120,6 +125,7 @@ pub fn get_host_info() -> Result<HostInfo, Error> {
         avail_virt: 0,
         avail_swap: 0,
     };
+
     Ok(HostInfo {
         loadavg,
         memory,
@@ -149,6 +155,7 @@ pub fn get_uuid() -> Result<String, Error> {
     };
     #[allow(unused_assignments)]
     let mut serial: CFStringRef = std::ptr::null();
+
     unsafe {
         // We need to keep track of CString else it will cause a freed error
         // cf: https://github.com/rust-lang/rust/issues/56603
@@ -196,5 +203,6 @@ pub fn get_uuid() -> Result<String, Error> {
             ));
         }
     };
+
     Ok(serial_number)
 }

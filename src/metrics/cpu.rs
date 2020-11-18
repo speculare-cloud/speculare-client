@@ -3,6 +3,11 @@ use std::{
     io::{prelude::*, BufReader, Error},
 };
 
+#[cfg(target_os = "macos")]
+use std::io::ErrorKind;
+#[cfg(target_os = "macos")]
+use libc::{c_uint, sysctl, c_void};
+
 /// Return the avg (not yet a true avg) cpu_freq as f64.
 #[cfg(target_os = "linux")]
 pub fn get_avg_cpufreq() -> Result<f64, Error> {
@@ -32,6 +37,22 @@ pub fn get_avg_cpufreq() -> Result<f64, Error> {
 }
 
 #[cfg(target_os = "macos")]
-pub fn get_avg_cpufreq() -> Result<f64, Error> {
-    todo!()
+pub fn get_avg_cpufreq_m() -> Result<f64, Error> {
+    let mut data: c_uint = unsafe { std::mem::zeroed() };
+    let mib = [6, 15];
+    let ret = unsafe {
+        sysctl(
+            &mib[0] as *const _ as *mut _,
+            mib.len() as u32,
+            &mut data as *mut _ as *mut c_void,
+            &mut std::mem::size_of::<c_uint>(),
+            std::ptr::null_mut(),
+            0,
+        )
+    };
+    if ret < 0 {
+        Err(Error::new(ErrorKind::Other, "Invalid return for sysctl"))
+    } else {
+        Ok(data as f64)
+    }
 }

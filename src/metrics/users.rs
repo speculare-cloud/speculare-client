@@ -138,6 +138,7 @@ pub fn get_users() -> Option<Vec<String>> {
 #[cfg(target_os = "macos")]
 pub fn get_users() -> Option<Vec<String>> {
     let mut users: Vec<String> = Vec::new();
+    #[allow(unused_assignments)]
     let mut buffer: *mut utmpx = unsafe { mem::zeroed() };
 
     unsafe {

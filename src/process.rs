@@ -5,7 +5,7 @@ use reqwest::blocking::Client;
 use std::io::{Error, ErrorKind};
 
 /// Collect all the metrics and send them to the server instance.
-pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Error> {
+pub fn collect_and_send(_client: &Client, _config: &Config) -> Result<(), Error> {
     // Construct the Data structure with all the info needed
     let host_info = match get_host_info() {
         Ok(val) => val,

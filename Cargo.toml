@@ -17,10 +17,12 @@ serde_json = "1.0.59"
 serde = { version = "1.0", features = ["derive"] }
 psutil = { git = "https://github.com/Martichou/rust-psutil" }
 reqwest = { version = "0.10", features = ["blocking", "json"] }
-
 [target.'cfg(target_os = "macos")'.dependencies]
+futures = "0.3.8"
+heim-disk = "0.0.11"
 io-kit-sys = "0.1.0"
 rust-crypto = "0.2.36"
+futures-util = "0.3.8"
 core-foundation-sys = "0.8.2"
 
 [dev-dependencies]

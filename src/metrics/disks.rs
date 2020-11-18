@@ -1,10 +1,17 @@
 use crate::models;
 
+#[cfg(target_os = "macos")]
+use futures::executor;
+#[cfg(target_os = "macos")]
+use futures_util::stream::StreamExt;
 use models::{Disks, IoStats};
 use psutil::disk;
+#[cfg(target_family = "unix")]
+use std::io::Error;
+#[cfg(target_os = "linux")]
 use std::{
     fs::File,
-    io::{prelude::*, BufReader, Error},
+    io::{prelude::*, BufReader},
 };
 
 /// Retrieve the disks and return them as a Vec<Disks>.
@@ -55,5 +62,17 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
 
 #[cfg(target_os = "macos")]
 pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
-    todo!()
+    let mut viostats: Vec<IoStats> = Vec::new();
+
+    let mut counters = heim_disk::io_counters();
+    while let Some(count) = executor::block_on(counters.next()) {
+        let count = count.unwrap();
+        viostats.push(IoStats {
+            device_name: count.device_name().to_string_lossy().to_string(),
+            sectors_read: count.read_bytes().value as i64,
+            sectors_wrtn: count.write_bytes().value as i64,
+        });
+    }
+
+    Ok(viostats)
 }

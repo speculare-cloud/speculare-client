@@ -40,6 +40,7 @@ pub fn get_hostname() -> String {
     x.nodename().to_owned()
 }
 
+/// Return the uptime of the host for macOS.
 #[cfg(target_os = "macos")]
 pub fn get_uptime() -> Result<Duration, Error> {
     let mut data: timeval = unsafe { std::mem::zeroed() };
@@ -63,6 +64,7 @@ pub fn get_uptime() -> Result<Duration, Error> {
     }
 }
 
+/// Return the LoadAvg on any Unix system.
 #[cfg(target_family = "unix")]
 pub fn get_loadavg() -> Result<LoadAvg, Error> {
     let mut data: [c_double; 3] = [0.0, 0.0, 0.0];

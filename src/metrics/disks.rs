@@ -21,6 +21,8 @@ use unescape::unescape;
 
 /// Retrieve the partitions and return them as a Vec<Disks>.
 /// Contains name, mount_point and total/free space.
+/// LINUX => read info from /proc/mounts.
+#[cfg(target_os = "linux")]
 pub fn get_partitions_info() -> Result<Vec<Disks>, Error> {
     let mut vdisks: Vec<Disks> = Vec::new();
     let file = File::open("/proc/mounts")?;
@@ -48,7 +50,16 @@ pub fn get_partitions_info() -> Result<Vec<Disks>, Error> {
     Ok(vdisks)
 }
 
-/// Return the total/free space of a Disk from it's path (mount_point)
+/// Retrieve the partitions and return them as a Vec<Disks>.
+/// Contains name, mount_point and total/free space.
+/// macOS => ?.
+#[cfg(target_os = "macos")]
+pub fn get_partitions_info() -> Result<Vec<Disks>, Error> {
+    todo!()
+}
+
+/// Return the total/free space of a Disk from it's path (mount_point).
+/// For both Linux and macOS.
 pub fn disk_usage<P>(path: P) -> Result<(u64, u64), Error>
 where
     P: AsRef<Path>,

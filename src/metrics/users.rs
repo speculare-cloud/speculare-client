@@ -162,8 +162,3 @@ pub fn get_users() -> Option<Vec<String>> {
 
     Some(users)
 }
-
-#[cfg(target_family = "windows")]
-pub fn get_users() -> Option<Vec<String>> {
-    todo!()
-}

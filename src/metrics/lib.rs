@@ -14,6 +14,8 @@ pub fn read_and_trim(path: &str) -> Result<String, Error> {
     Ok(content.trim().to_owned())
 }
 
+/// Detect if a filesysteme is for a physical drive or not.
+/// This is not 100% true, but it's true enough for me.
 pub fn is_physical_filesys(filesysteme: &str) -> bool {
     match filesysteme {
         "ext2" => true,

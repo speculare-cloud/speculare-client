@@ -10,7 +10,7 @@ use std::{
     io::{prelude::*, BufReader},
 };
 
-/// Return the avg (not yet a true avg) cpu_freq as f64.
+/// Return the first cpu_freq as f64.
 #[cfg(target_os = "linux")]
 pub fn get_avg_cpufreq() -> Result<f64, Error> {
     let file = File::open("/proc/cpuinfo")?;
@@ -30,6 +30,7 @@ pub fn get_avg_cpufreq() -> Result<f64, Error> {
     Ok(-1.0)
 }
 
+/// Return the avg cpu_freq as f64.
 #[cfg(target_os = "macos")]
 pub fn get_avg_cpufreq() -> Result<f64, Error> {
     let mut data: c_uint = 0;

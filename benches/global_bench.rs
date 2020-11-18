@@ -1,6 +1,6 @@
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
-use metrics_rs::{cpu::*, disks::*, miscs::*, users::*};
+use metrics_rs::{cpu::*, disks::*, miscs::*, sensors::*, users::*};
 
 fn all_gather() {
     let _host_info = match get_host_info() {
@@ -11,12 +11,12 @@ fn all_gather() {
     {
         let _uuid = get_uuid().expect("Cannot retrieve UUID");
         let _cpu_freq = get_avg_cpufreq();
-        //let _sensors = get_sensors_data();
         let _disks = get_disks_data();
         let _iostats = match get_iostats() {
             Ok(val) => Some(val),
             Err(_) => None,
         };
+        let _sensors = get_sensors_data();
         let _users = get_users();
     };
 }

@@ -16,7 +16,7 @@ pub struct Data {
     pub cpu_freq: i64,
     pub load_avg: LoadAvg,
     pub sensors: Vec<Sensors>,
-    pub disks: Vec<Disks>,
+    pub disks: Option<Vec<Disks>>,
     pub iostats: Option<Vec<IoStats>>,
     pub memory: Memory,
     pub users: Option<Vec<String>>,

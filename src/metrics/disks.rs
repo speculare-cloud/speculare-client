@@ -7,7 +7,7 @@ use futures_util::stream::StreamExt;
 use models::{Disks, IoStats};
 use psutil::disk;
 #[cfg(target_family = "unix")]
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 #[cfg(target_os = "linux")]
 use std::{
     fs::File,
@@ -15,13 +15,21 @@ use std::{
 };
 
 /// Retrieve the disks and return them as a Vec<Disks>.
-pub fn get_disks_data() -> Vec<Disks> {
-    let partitions = disk::partitions_physical().unwrap();
+// TODO - Implement it myself instead of using psutil
+// -> Will gain control over the optimization
+pub fn get_disks_data() -> Result<Vec<Disks>, Error> {
+    let partitions = match disk::partitions_physical() {
+        Ok(val) => val,
+        Err(x) => return Err(Error::new(ErrorKind::Other, x)),
+    };
     let mut vdisks: Vec<Disks> = Vec::with_capacity(partitions.len());
 
     for disk in partitions {
         let mount = disk.mountpoint();
-        let disk_usage = disk::disk_usage(mount).unwrap();
+        let disk_usage = match disk::disk_usage(mount) {
+            Ok(val) => val,
+            Err(_) => continue,
+        };
         vdisks.push(Disks {
             name: disk.device().to_string(),
             mount_point: mount.display().to_string(),
@@ -30,7 +38,7 @@ pub fn get_disks_data() -> Vec<Disks> {
         })
     }
 
-    vdisks
+    Ok(vdisks)
 }
 
 #[cfg(target_os = "linux")]
@@ -68,7 +76,7 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
     while let Some(count) = executor::block_on(counters.next()) {
         let count = count.unwrap();
         viostats.push(IoStats {
-            device_name: count.device_name().to_string_lossy().to_string(),
+            device_name: count.device_name().to_string_lossy().to_owned(),
             sectors_read: count.read_bytes().value as i64,
             sectors_wrtn: count.write_bytes().value as i64,
         });

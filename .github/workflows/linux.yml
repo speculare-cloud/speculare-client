@@ -24,15 +24,6 @@ jobs:
     - name: Build
       run: cargo check
 
-  fmt:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout source
-      uses: actions/checkout@v2
-
-    - name: Format
-      run: cargo fmt --all -- --check
-
   test:
     runs-on: ubuntu-latest
     steps:

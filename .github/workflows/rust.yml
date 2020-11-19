@@ -17,13 +17,12 @@ jobs:
       uses: actions/checkout@v2
     
     - name: Cache Rust dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v1.0.1
       with:
         path: target
         key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Update cargo
-      run: cargo update
+        restore-keys: |
+          ${{ runner.OS }}-build-
 
     - name: Build
       run: cargo check
@@ -35,13 +34,12 @@ jobs:
       uses: actions/checkout@v2
     
     - name: Cache Rust dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v1.0.1
       with:
         path: target
         key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Update cargo
-      run: cargo update
+        restore-keys: |
+          ${{ runner.OS }}-build-
 
     - name: Format
       run: cargo fmt --all -- --check
@@ -53,13 +51,12 @@ jobs:
       uses: actions/checkout@v2
     
     - name: Cache Rust dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v1.0.1
       with:
         path: target
         key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Update cargo
-      run: cargo update
+        restore-keys: |
+          ${{ runner.OS }}-build-
 
     - name: Run tests
       run: cargo test
@@ -71,13 +68,12 @@ jobs:
       uses: actions/checkout@v2
     
     - name: Cache Rust dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v1.0.1
       with:
         path: target
         key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Update cargo
-      run: cargo update
+        restore-keys: |
+          ${{ runner.OS }}-build-
 
     - name: Run benches
       run: cargo bench

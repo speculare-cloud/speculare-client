@@ -15,7 +15,6 @@ use std::ffi::CStr;
 #[cfg(target_family = "unix")]
 use std::io::{Error, ErrorKind};
 use std::path::Path;
-#[cfg(target_os = "linux")]
 use std::path::PathBuf;
 #[cfg(target_os = "linux")]
 use std::{

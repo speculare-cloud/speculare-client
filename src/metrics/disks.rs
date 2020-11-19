@@ -1,3 +1,4 @@
+#[cfg(target_os = "linux")]
 use super::is_physical_filesys;
 
 use crate::models;
@@ -11,12 +12,14 @@ use nix::sys;
 #[cfg(target_family = "unix")]
 use std::io::{Error, ErrorKind};
 use std::path::Path;
+#[cfg(target_os = "linux")]
 use std::path::PathBuf;
 #[cfg(target_os = "linux")]
 use std::{
     fs::File,
     io::{BufRead, BufReader},
 };
+#[cfg(target_os = "linux")]
 use unescape::unescape;
 
 /// Retrieve the partitions and return them as a Vec<Disks>.
@@ -110,7 +113,7 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
     while let Some(count) = executor::block_on(counters.next()) {
         let count = count.unwrap();
         viostats.push(IoStats {
-            device_name: count.device_name().to_string_lossy().to_owned(),
+            device_name: count.device_name().to_str().unwrap_or("?").to_owned(),
             sectors_read: count.read_bytes().value as i64,
             sectors_wrtn: count.write_bytes().value as i64,
         });

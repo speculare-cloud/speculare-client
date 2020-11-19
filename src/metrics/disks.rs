@@ -1,4 +1,3 @@
-#[cfg(target_os = "linux")]
 use super::is_physical_filesys;
 
 use crate::models;
@@ -8,7 +7,11 @@ use futures::executor;
 #[cfg(target_os = "macos")]
 use futures_util::stream::StreamExt;
 use models::{Disks, IoStats};
+#[cfg(target_os = "macos")]
+use nix::libc::statfs;
 use nix::sys;
+#[cfg(target_os = "macos")]
+use std::ffi::CStr;
 #[cfg(target_family = "unix")]
 use std::io::{Error, ErrorKind};
 use std::path::Path;
@@ -21,6 +24,11 @@ use std::{
 };
 #[cfg(target_os = "linux")]
 use unescape::unescape;
+
+#[cfg(target_os = "macos")]
+extern "C" {
+    fn getfsstat64(buf: *mut statfs, bufsize: libc::c_int, flags: libc::c_int) -> libc::c_int;
+}
 
 /// Retrieve the partitions and return them as a Vec<Disks>.
 /// Contains name, mount_point and total/free space.
@@ -55,10 +63,55 @@ pub fn get_partitions_info() -> Result<Vec<Disks>, Error> {
 
 /// Retrieve the partitions and return them as a Vec<Disks>.
 /// Contains name, mount_point and total/free space.
-/// macOS => ?.
+/// macOS => use C's function getfsstat64.
 #[cfg(target_os = "macos")]
 pub fn get_partitions_info() -> Result<Vec<Disks>, Error> {
-    todo!()
+    let expected_len = unsafe { getfsstat64(std::ptr::null_mut(), 0, 2) };
+    let mut mounts: Vec<statfs> = Vec::with_capacity(expected_len as usize);
+
+    let result = unsafe {
+        getfsstat64(
+            mounts.as_mut_ptr(),
+            std::mem::size_of::<statfs>() as libc::c_int * expected_len,
+            2,
+        )
+    };
+    if result < 0 {
+        return Err(Error::last_os_error());
+    }
+    unsafe {
+        mounts.set_len(result as usize);
+    }
+
+    let mut vdisks: Vec<Disks> = Vec::with_capacity(expected_len as usize);
+    for stat in mounts {
+        if !is_physical_filesys(unsafe {
+            &CStr::from_ptr(stat.f_fstypename.as_ptr()).to_string_lossy()
+        }) {
+            continue;
+        }
+        let m_p = PathBuf::from(unsafe {
+            CStr::from_ptr(stat.f_mntonname.as_ptr())
+                .to_string_lossy()
+                .to_string()
+        });
+        let usage: (u64, u64) = match disk_usage(&m_p) {
+            Ok(val) => val,
+            Err(_) => (0, 0),
+        };
+        vdisks.push(Disks {
+            name: unsafe {
+                CStr::from_ptr(stat.f_mntfromname.as_ptr())
+                    .to_string_lossy()
+                    .to_string()
+            },
+            mount_point: m_p.into_os_string().into_string().unwrap(),
+            total_space: (usage.0 / 100000) as i64,
+            avail_space: (usage.1 / 100000) as i64,
+        });
+    }
+
+    Ok(vdisks)
 }
 
 /// Return the total/free space of a Disk from it's path (mount_point).

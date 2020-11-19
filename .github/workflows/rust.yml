@@ -11,7 +11,12 @@ env:
 
 jobs:
   check:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
     steps:
     - name: Checkout source
       uses: actions/checkout@v2
@@ -20,7 +25,7 @@ jobs:
       run: cargo check
 
   fmt:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout source
       uses: actions/checkout@v2
@@ -29,7 +34,7 @@ jobs:
       run: cargo fmt --all -- --check
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout source
       uses: actions/checkout@v2
@@ -46,7 +51,7 @@ jobs:
       run: cargo test
 
   bench:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout source
       uses: actions/checkout@v2

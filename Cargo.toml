@@ -11,15 +11,23 @@ nix = "0.19.0"
 dirs = "3.0.1"
 log = "0.4.11"
 libc = "0.2.80"
-cpuid = "0.1.1"
 text_io = "0.1.8"
 env_logger = "0.8.1"
-mac_address = "1.1.1"
 serde_json = "1.0.59"
 serde = { version = "1.0", features = ["derive"] }
-os_info = { version = "3.0", default-features = false }
-psutil = { git = "https://github.com/Martichou/rust-psutil" }
 reqwest = { version = "0.10", features = ["blocking", "json"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+unescape = "0.1.0"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+futures = "0.3.8"
+heim-disk = "0.0.11"
+io-kit-sys = "0.1.0"
+rust-crypto = "0.2.36"
+futures-util = "0.3.8"
+core-foundation-sys = "0.8.2"
+pin-project-internal = "1.0.2"
 
 [dev-dependencies]
 criterion = "0.3"
@@ -48,7 +56,7 @@ name = "disks_bench"
 harness = false
 
 [[bench]]
-name = "memory_bench"
+name = "global_bench"
 harness = false
 
 [[bench]]

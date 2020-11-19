@@ -1,24 +1,37 @@
-use crate::models::{Config, DynData};
+use crate::models::{Config, Data};
 
-use metrics_rs::{cpu::*, disks::*, memory::*, miscs::*, sensors::*, users::*};
+use metrics_rs::{cpu::*, disks::*, miscs::*, sensors::*, users::*};
 use reqwest::blocking::Client;
-use std::error::Error;
+use std::io::{Error, ErrorKind};
 
 /// Collect all the metrics and send them to the server instance.
-pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn collect_and_send(_client: &Client, _config: &Config) -> Result<(), Error> {
     // Construct the Data structure with all the info needed
-    let dyndata = DynData {
-        uuid: get_uuid(),
-        uptime: get_uptime(),
-        cpu_freq: get_avg_cpufreq(),
-        load_avg: get_avg_load(),
+    let host_info = match get_host_info() {
+        Ok(val) => val,
+        Err(x) => return Err(Error::new(ErrorKind::Other, x)),
+    };
+
+    let dyndata = Data {
+        uuid: get_uuid().expect("Cannot retrieve UUID"),
+        os: host_info.os_version,
+        hostname: host_info.hostname,
+        uptime: host_info.uptime,
+        cpu_freq: match get_avg_cpufreq() {
+            Ok(val) => val as i64,
+            Err(_) => -1,
+        },
+        load_avg: host_info.loadavg,
         sensors: get_sensors_data(),
-        disks: get_disks_data(),
+        disks: match get_partitions_info() {
+            Ok(val) => Some(val),
+            Err(_) => None,
+        },
         iostats: match get_iostats() {
             Ok(val) => Some(val),
             Err(_) => None,
         },
-        memory: get_memory(),
+        memory: host_info.memory,
         users: get_users(),
     };
 
@@ -27,9 +40,7 @@ pub fn collect_and_send(client: &Client, config: &Config) -> Result<(), Box<dyn 
     // // Send the request
     // let res = client.post(url).json(&dyndata).send();
 
-    // // Analyze the output and log it + send to sentry in case of error
-    // // TODO - Implement a status_code from the server to tell the client
-    // // "Hey, I'm missing some of your infos, can you send me those ?"
+    // // Detect error for the post request and log potential info
     // match res {
     //     Ok(res) => info!("return status : {}", res.status()),
     //     Err(x) => {

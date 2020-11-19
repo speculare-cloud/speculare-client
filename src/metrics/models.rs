@@ -35,3 +35,12 @@ pub struct Memory {
     pub total_swap: i64,
     pub avail_swap: i64,
 }
+
+#[derive(Debug)]
+pub struct HostInfo {
+    pub loadavg: LoadAvg,
+    pub memory: Memory,
+    pub os_version: String,
+    pub hostname: String,
+    pub uptime: i64,
+}

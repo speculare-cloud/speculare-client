@@ -15,7 +15,7 @@ use std::{thread, time::Duration};
 
 /// Main which start the process and loop indefinietly.
 /// No other way to stop it than killing the process.
-#[cfg(not(windows))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 fn main() {
     // Define log as info for debug and error for prod
     let dbg_level = if cfg!(debug_assertions) {

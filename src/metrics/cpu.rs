@@ -1,23 +1,55 @@
-use crate::models;
+#[cfg(target_os = "macos")]
+use libc::{c_uint, c_void, sysctl};
+#[cfg(target_family = "unix")]
+use std::io::Error;
+#[cfg(target_os = "macos")]
+use std::io::ErrorKind;
+#[cfg(target_os = "linux")]
+use std::{
+    fs::File,
+    io::{prelude::*, BufReader},
+};
 
-use models::LoadAvg;
-use psutil::host;
+/// Return the first cpu_freq as f64.
+#[cfg(target_os = "linux")]
+pub fn get_avg_cpufreq() -> Result<f64, Error> {
+    let file = File::open("/proc/cpuinfo")?;
+    let file = BufReader::with_capacity(1024, file);
 
-/// Return the avg cpu_freq across all core as i64.
-pub fn get_avg_cpufreq() -> i64 {
-    match cpuid::clock_frequency() {
-        Some(val) => val.into(),
-        None => 0,
+    for line in file.lines() {
+        let line = line.unwrap();
+        let lenght = line.len();
+        if lenght > 7 && lenght < 48 && &line[..7] == "cpu MHz" {
+            match line[11..lenght - 1].parse::<f64>() {
+                Ok(val) => return Ok(val),
+                Err(_) => continue,
+            };
+        }
     }
+
+    Ok(-1.0)
 }
 
-/// Return LoadAvg struct containing the 1, 5 and 15 percentil cpu average load.
-#[cfg(target_family = "unix")]
-pub fn get_avg_load() -> LoadAvg {
-    let load_avg = host::loadavg().unwrap();
-    LoadAvg {
-        one: load_avg.one,
-        five: load_avg.five,
-        fifteen: load_avg.fifteen,
+/// Return the avg cpu_freq as f64.
+#[cfg(target_os = "macos")]
+pub fn get_avg_cpufreq() -> Result<f64, Error> {
+    let mut data: c_uint = 0;
+    let mib = [6, 15];
+
+    let ret = unsafe {
+        sysctl(
+            &mib[0] as *const _ as *mut _,
+            mib.len() as u32,
+            &mut data as *mut _ as *mut c_void,
+            &mut std::mem::size_of::<c_uint>(),
+            std::ptr::null_mut(),
+            0,
+        )
+    };
+
+    if ret < 0 {
+        Err(Error::new(ErrorKind::Other, "Invalid return for sysctl"))
+    } else {
+        Ok(data as f64)
     }
 }

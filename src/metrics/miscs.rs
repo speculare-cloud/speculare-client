@@ -5,23 +5,21 @@ use crate::models;
 
 #[cfg(target_os = "macos")]
 use core_foundation_sys::{
-    base::CFTypeRef,
+    base::{kCFAllocatorDefault, CFRelease, CFTypeRef},
     string::{CFStringGetCString, CFStringRef},
 };
 #[cfg(target_os = "macos")]
-use crypto::digest::Digest;
-#[cfg(target_os = "macos")]
 use io_kit_sys::*;
 #[cfg(target_os = "macos")]
-use libc::c_char;
+use io_kit_sys::{kIOMasterPortDefault, keys::kIOPlatformUUIDKey};
 #[cfg(target_family = "unix")]
-use libc::{c_double, getloadavg};
+use libc::{c_char, c_double, getloadavg};
 #[cfg(target_os = "macos")]
 use libc::{c_void, sysctl, timeval};
 use models::{HostInfo, LoadAvg, Memory};
 use nix::sys;
 #[cfg(target_os = "macos")]
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::io::{Error, ErrorKind};
 #[cfg(target_os = "macos")]
 use std::time::Duration;
@@ -146,65 +144,52 @@ pub fn get_uuid() -> Result<String, Error> {
         Err(_) => Ok(read_and_trim("/var/lib/dbus/machine-id")?),
     }
 }
+
+use io_kit_sys::IOServiceMatching;
+
 /// Get the machine Serial Number (macOS) as a String.
 /// macOS => Will get it from some black magic extern C function.
 #[cfg(target_os = "macos")]
 pub fn get_uuid() -> Result<String, Error> {
-    let serial_number;
-    let buffer = match CString::new(String::with_capacity(64)) {
-        Ok(val) => val,
-        Err(x) => return Err(Error::new(ErrorKind::Other, x)),
-    };
     #[allow(unused_assignments)]
-    let mut serial: CFStringRef = std::ptr::null();
+    let uuid: CFStringRef;
 
-    unsafe {
-        // We need to keep track of CString else it will cause a freed error
-        // cf: https://github.com/rust-lang/rust/issues/56603
-        let ioexpertdevice = match CString::new("IOPlatformExpertDevice") {
-            Ok(val) => val,
-            Err(x) => return Err(Error::new(ErrorKind::Other, x)),
-        };
-        let plat_exp = IOServiceGetMatchingService(0, IOServiceMatching(ioexpertdevice.as_ptr()));
-        if plat_exp != 0 {
-            let ioplatserialnumber = match CString::new("IOPlatformSerialNumber") {
-                Ok(val) => val,
-                Err(x) => return Err(Error::new(ErrorKind::Other, x)),
-            };
-            let serial_number_cft: CFTypeRef = IORegistryEntryCreateCFProperty(
-                plat_exp,
-                CFSTR(ioplatserialnumber.as_ptr()),
-                std::ptr::null(),
-                0,
-            );
-            if !serial_number_cft.is_null() {
-                serial = serial_number_cft as CFStringRef;
-            } else {
-                return Err(Error::new(ErrorKind::Other, "Cannot get serial_number_cft"));
-            }
-            if CFStringGetCString(serial, buffer.as_ptr() as *mut c_char, 64, 134217984) != 0 {
-                let mut hasher = crypto::sha3::Sha3::sha3_256();
-                serial_number = match CStr::from_ptr(buffer.as_ptr()).to_str() {
-                    Ok(val) => {
-                        hasher.input_str(val);
-                        hasher.result_str()
-                    }
-                    Err(x) => return Err(Error::new(ErrorKind::Other, x)),
-                }
-            } else {
-                return Err(Error::new(
-                    ErrorKind::Other,
-                    "Cannot convert serial number to a String",
-                ));
-            }
-            IOObjectRelease(plat_exp);
-        } else {
-            return Err(Error::new(
-                ErrorKind::Other,
-                "Cannot get the IOServiceGetMatchingService",
-            ));
-        }
+    let platform_expert = unsafe {
+        IOServiceGetMatchingService(
+            kIOMasterPortDefault,
+            IOServiceMatching(b"IOPlatformExpertDevice\0".as_ptr() as *const c_char),
+        )
     };
+    if platform_expert != 0 {
+        let uuid_ascfstring: CFTypeRef = unsafe {
+            IORegistryEntryCreateCFProperty(
+                platform_expert,
+                CFSTR(kIOPlatformUUIDKey),
+                kCFAllocatorDefault,
+                0,
+            )
+        };
+        if !uuid_ascfstring.is_null() {
+            uuid = uuid_ascfstring as CFStringRef;
+        } else {
+            return Err(Error::new(ErrorKind::Other, "Cannot get uuid_ascfstring"));
+        }
+        unsafe { IOObjectRelease(platform_expert) };
+    } else {
+        return Err(Error::new(
+            ErrorKind::Other,
+            "Cannot get the platform_expert",
+        ));
+    }
 
-    Ok(serial_number)
+    let mut buffer = [1i8; 37];
+    if unsafe { CFStringGetCString(uuid, buffer.as_mut_ptr(), 37, 134217984) } == 0 {
+        return Err(Error::new(ErrorKind::Other, "Cannot get the buffer filled"));
+    }
+    unsafe { CFRelease(uuid as *mut c_void) };
+
+    match unsafe { CStr::from_ptr(buffer.as_mut_ptr()) }.to_str() {
+        Ok(val) => Ok(val.to_owned()),
+        Err(x) => Err(Error::new(ErrorKind::Other, x)),
+    }
 }

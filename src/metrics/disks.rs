@@ -173,15 +173,16 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
     let mut viostats: Vec<IoStats> = Vec::new();
 
     unsafe {
-        let mut disk_list: io_iterator_t = std::mem::zeroed();
+        let mut disk_list = std::mem::MaybeUninit::<io_iterator_t>::uninit();
         if IOServiceGetMatchingServices(
             kIOMasterPortDefault,
             IOServiceMatching(b"IOMedia\0".as_ptr() as *const c_char),
-            &mut disk_list,
+            &mut disk_list as *mut _ as *mut _,
         ) != kIOReturnSuccess
         {
             return Err(Error::last_os_error());
         }
+        let disk_list = disk_list.assume_init();
 
         #[allow(unused_assignments)]
         let mut disk: io_registry_entry_t = 0;

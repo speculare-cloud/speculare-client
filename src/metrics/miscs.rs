@@ -51,7 +51,7 @@ pub fn get_hostname() -> String {
 /// Return the uptime of the host for macOS.
 #[cfg(target_os = "macos")]
 pub fn get_uptime() -> Result<Duration, Error> {
-    let mut data: timeval = unsafe { std::mem::zeroed() };
+    let mut data = std::mem::MaybeUninit::<timeval>::uninit();
     let mib = [1, 21];
 
     let ret = unsafe {
@@ -68,6 +68,7 @@ pub fn get_uptime() -> Result<Duration, Error> {
     if ret < 0 {
         Err(Error::new(ErrorKind::Other, "Invalid return for sysctl"))
     } else {
+        let data = unsafe { data.assume_init() };
         Ok(Duration::from_secs(data.tv_sec as u64))
     }
 }
@@ -156,10 +157,7 @@ pub fn get_uuid() -> Result<String, Error> {
             }
             IOObjectRelease(platform_expert);
         } else {
-            return Err(Error::new(
-                ErrorKind::Other,
-                "Cannot get the platform_expert",
-            ));
+            return Err(Error::last_os_error());
         }
 
         let mut buffer = [0i8; 37];

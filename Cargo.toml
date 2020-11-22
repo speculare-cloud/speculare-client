@@ -49,6 +49,10 @@ opt-level = 3
 codegen-units = 1
 
 [[bench]]
+name = "global_bench"
+harness = false
+
+[[bench]]
 name = "cpu_bench"
 harness = false
 
@@ -57,7 +61,7 @@ name = "disks_bench"
 harness = false
 
 [[bench]]
-name = "global_bench"
+name = "memory_bench"
 harness = false
 
 [[bench]]

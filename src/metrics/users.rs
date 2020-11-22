@@ -132,8 +132,6 @@ pub fn get_users() -> Option<Vec<String>> {
 /// UTMPX Struct is the same as the one from C utmpx.h.
 /// MacOS implement this a bit differently than linux.
 /// So this version uses MacOS's function [setutxent, getutxent].
-/// This function will take approx 0,170s to run the first time as
-/// setutxent & getutxent need to open the file and create the static.
 #[cfg(target_os = "macos")]
 pub fn get_users() -> Option<Vec<String>> {
     let mut users: Vec<String> = Vec::new();

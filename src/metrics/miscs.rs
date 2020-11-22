@@ -35,8 +35,6 @@ use std::io::{Error, ErrorKind};
 use std::time::Duration;
 
 /// Get the os version (Mac/Linux/Windows) in a safe String.
-/// Take approx 0,080ms to load the info 'os_info::get()'.
-/// But it's okay since we'll only call this function once in a while.
 pub fn get_os_version() -> String {
     let x = sys::utsname::uname();
     x.sysname().to_owned() + "/" + x.release()

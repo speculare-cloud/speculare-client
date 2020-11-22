@@ -1,4 +1,4 @@
-use metrics_rs::models::{Disks, IoStats, LoadAvg, Memory, Sensors};
+use metrics::models::{Disks, IoStats, LoadAvg, Memory, Sensors};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

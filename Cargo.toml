@@ -32,7 +32,7 @@ pin-project-internal = "1.0.2"
 criterion = "0.3"
 
 [lib]
-name = "metrics_rs"
+name = "metrics"
 path = "src/metrics/lib.rs"
 bench = false
 

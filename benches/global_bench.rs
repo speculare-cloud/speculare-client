@@ -1,6 +1,6 @@
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
-use metrics_rs::{cpu::*, disks::*, miscs::*, sensors::*, users::*};
+use metrics::{cpu::*, disks::*, miscs::*, sensors::*, users::*};
 
 fn all_gather() {
     let _host_info = match get_host_info() {

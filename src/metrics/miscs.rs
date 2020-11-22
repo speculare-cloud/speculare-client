@@ -11,7 +11,7 @@ use core_foundation_sys::{
 #[cfg(target_os = "macos")]
 use io_kit_sys::*;
 #[cfg(target_os = "macos")]
-use io_kit_sys::{kIOMasterPortDefault, keys::kIOPlatformUUIDKey};
+use io_kit_sys::{kIOMasterPortDefault, keys::kIOPlatformUUIDKey, IOServiceMatching};
 #[cfg(target_family = "unix")]
 use libc::{c_char, c_double, getloadavg};
 #[cfg(target_os = "macos")]
@@ -144,8 +144,6 @@ pub fn get_uuid() -> Result<String, Error> {
         Err(_) => Ok(read_and_trim("/var/lib/dbus/machine-id")?),
     }
 }
-
-use io_kit_sys::IOServiceMatching;
 
 /// Get the machine Serial Number (macOS) as a String.
 /// macOS => Will get it from some black magic extern C function.

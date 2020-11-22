@@ -24,19 +24,6 @@ jobs:
     steps:
     - name: Checkout source
       uses: actions/checkout@v2
-    
-    - name: Generate Cargo.lock
-      uses: actions-rs/cargo@v1
-      with:
-        command: generate-lockfile
-
-    - uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Run tests
       run: cargo test

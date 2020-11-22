@@ -162,7 +162,7 @@ pub fn get_uuid() -> Result<String, Error> {
             ));
         }
 
-        let mut buffer = [1i8; 37];
+        let mut buffer = [0i8; 37];
         if CFStringGetCString(uuid, buffer.as_mut_ptr(), 37, 134217984) == 0 {
             return Err(Error::new(ErrorKind::Other, "Cannot get the buffer filled"));
         }

@@ -1,6 +1,7 @@
 #[cfg(target_os = "linux")]
 use super::read_and_trim;
 
+#[cfg(target_os = "macos")]
 use crate::cpu;
 #[cfg(target_os = "macos")]
 use crate::memory;
@@ -11,6 +12,7 @@ use core_foundation_sys::{
     base::{kCFAllocatorDefault, CFRelease, CFTypeRef},
     string::{CFStringGetCString, CFStringRef},
 };
+#[cfg(target_os = "macos")]
 use cpu::get_loadavg;
 #[cfg(target_os = "macos")]
 use io_kit_sys::*;
@@ -24,7 +26,7 @@ use libc::{c_void, sysctl, timeval};
 use memory::get_memory;
 use models::HostInfo;
 #[cfg(target_os = "linux")]
-use models::Memory;
+use models::{LoadAvg, Memory};
 use nix::sys;
 #[cfg(target_os = "macos")]
 use std::ffi::CStr;

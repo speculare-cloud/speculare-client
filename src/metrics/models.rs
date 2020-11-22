@@ -1,3 +1,4 @@
+#[cfg(target_os = "macos")]
 use mach::vm_types::natural_t;
 use serde::Serialize;
 
@@ -46,6 +47,7 @@ pub struct HostInfo {
     pub uptime: i64,
 }
 
+#[cfg(target_os = "macos")]
 #[repr(C)]
 pub struct vm_statistics64 {
     pub free_count: natural_t,

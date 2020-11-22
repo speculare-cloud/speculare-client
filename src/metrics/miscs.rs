@@ -12,8 +12,10 @@ use core_foundation_sys::{
 use io_kit_sys::*;
 #[cfg(target_os = "macos")]
 use io_kit_sys::{kIOMasterPortDefault, keys::kIOPlatformUUIDKey, IOServiceMatching};
+#[cfg(target_os = "macos")]
+use libc::c_char;
 #[cfg(target_family = "unix")]
-use libc::{c_char, c_double, getloadavg};
+use libc::{c_double, getloadavg};
 #[cfg(target_os = "macos")]
 use libc::{c_void, sysctl, timeval};
 use models::{HostInfo, LoadAvg, Memory};

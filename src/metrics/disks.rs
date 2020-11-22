@@ -2,6 +2,22 @@ use super::is_physical_filesys;
 
 use crate::models;
 
+#[cfg(target_os = "macos")]
+use core_foundation_sys::{
+    base::{kCFAllocatorDefault, CFRelease},
+    dictionary::{CFDictionaryGetValueIfPresent, CFDictionaryRef},
+    number::{CFNumberGetValue, CFNumberRef},
+    string::{CFStringGetCString, CFStringRef},
+};
+#[cfg(target_os = "macos")]
+use io_kit_sys::{
+    kIOMasterPortDefault,
+    ret::kIOReturnSuccess,
+    types::{io_iterator_t, io_registry_entry_t},
+    IOServiceMatching, *,
+};
+#[cfg(target_os = "macos")]
+use libc::c_char;
 use models::{Disks, IoStats};
 #[cfg(target_os = "macos")]
 use nix::libc::statfs;
@@ -10,8 +26,7 @@ use nix::sys;
 use std::ffi::CStr;
 #[cfg(target_family = "unix")]
 use std::io::{Error, ErrorKind};
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 #[cfg(target_os = "linux")]
 use std::{
     fs::File,
@@ -150,18 +165,6 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
     Ok(viostats)
 }
 
-use core_foundation_sys::dictionary::CFDictionaryRef;
-use core_foundation_sys::base::{kCFAllocatorDefault, CFRelease};
-use core_foundation_sys::string::{CFStringGetCString, CFStringRef};
-use core_foundation_sys::dictionary::CFDictionaryGetValueIfPresent;
-use core_foundation_sys::number::{CFNumberRef, CFNumberGetValue};
-
-use libc::c_char;
-use io_kit_sys::{kIOMasterPortDefault, IOServiceMatching};
-use io_kit_sys::ret::kIOReturnSuccess;
-use io_kit_sys::types::*;
-use io_kit_sys::*;
-
 /// Return the disk io usage, number of sectors read, wrtn.
 /// From that you can compute the mb/s.
 /// macOS -> Read data using heim_disks.
@@ -172,10 +175,11 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
     unsafe {
         let mut disk_list: io_iterator_t = std::mem::zeroed();
         if IOServiceGetMatchingServices(
-            kIOMasterPortDefault, 
-            IOServiceMatching(b"IOMedia\0".as_ptr() as *const c_char), 
-            &mut disk_list
-        ) != kIOReturnSuccess {
+            kIOMasterPortDefault,
+            IOServiceMatching(b"IOMedia\0".as_ptr() as *const c_char),
+            &mut disk_list,
+        ) != kIOReturnSuccess
+        {
             return Err(Error::last_os_error());
         }
 
@@ -193,7 +197,9 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
             stats_dict = std::ptr::null();
 
             // Maybe pass the plane as a mut_ptr
-            if IORegistryEntryGetParentEntry(disk, b"IOService\0".as_ptr() as *mut i8, &mut parent) != kIOReturnSuccess {
+            if IORegistryEntryGetParentEntry(disk, b"IOService\0".as_ptr() as *mut i8, &mut parent)
+                != kIOReturnSuccess
+            {
                 IOObjectRelease(disk);
                 return Err(Error::last_os_error());
             }
@@ -205,8 +211,9 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
                     disk,
                     &mut parent_dict as *const _ as *mut _,
                     kCFAllocatorDefault,
-                    0
-                ) != kIOReturnSuccess {
+                    0,
+                ) != kIOReturnSuccess
+                {
                     IOObjectRelease(disk);
                     IOObjectRelease(parent);
                     return Err(Error::last_os_error());
@@ -216,8 +223,9 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
                     parent,
                     &mut props_dict as *const _ as *mut _,
                     kCFAllocatorDefault,
-                    0
-                ) != kIOReturnSuccess {
+                    0,
+                ) != kIOReturnSuccess
+                {
                     CFRelease(parent_dict as *mut _);
                     CFRelease(props_dict as *mut _);
                     IOObjectRelease(disk);
@@ -227,15 +235,19 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
 
                 let mut disk_name_ref = std::mem::MaybeUninit::<CFStringRef>::uninit();
                 if CFDictionaryGetValueIfPresent(
-                    parent_dict, 
-                    CFSTR(b"BSD Name\0".as_ptr() as *mut i8) as *mut _, 
-                    &mut disk_name_ref as *mut _ as *mut _
-                ) == 0 {
+                    parent_dict,
+                    CFSTR(b"BSD Name\0".as_ptr() as *mut i8) as *mut _,
+                    &mut disk_name_ref as *mut _ as *mut _,
+                ) == 0
+                {
                     CFRelease(parent_dict as *mut _);
                     CFRelease(props_dict as *mut _);
                     IOObjectRelease(disk);
                     IOObjectRelease(parent);
-                    return Err(Error::new(ErrorKind::Other, "CFDictionaryGetValueIfPresent: BSD Name not found in the parent_dict"));
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "CFDictionaryGetValueIfPresent: BSD Name not found in the parent_dict",
+                    ));
                 }
                 let disk_name_ref = disk_name_ref.assume_init();
                 let mut name = [0i8; 64];
@@ -248,15 +260,19 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
                 }
 
                 if CFDictionaryGetValueIfPresent(
-                    props_dict, 
+                    props_dict,
                     CFSTR(b"Statistics\0".as_ptr() as *mut i8) as *mut _,
-                    &mut stats_dict as *mut _ as *mut _
-                ) == 0 {
+                    &mut stats_dict as *mut _ as *mut _,
+                ) == 0
+                {
                     CFRelease(parent_dict as *mut _);
                     CFRelease(props_dict as *mut _);
                     IOObjectRelease(disk);
                     IOObjectRelease(parent);
-                    return Err(Error::new(ErrorKind::Other, "CFDictionaryGetValueIfPresent: Statistics not found in the props_dict"));
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "CFDictionaryGetValueIfPresent: Statistics not found in the props_dict",
+                    ));
                 }
 
                 let mut write_bytes_nbr = std::mem::MaybeUninit::<CFNumberRef>::uninit();
@@ -264,17 +280,20 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
                 let mut read_bytes = 0i64;
                 let mut write_bytes = 0i64;
 
-
                 if CFDictionaryGetValueIfPresent(
                     stats_dict,
                     CFSTR(b"Bytes (Read)\0".as_ptr() as *mut i8) as *mut _,
-                    &mut write_bytes_nbr as *mut _ as *mut _
-                ) == 0 {
+                    &mut write_bytes_nbr as *mut _ as *mut _,
+                ) == 0
+                {
                     CFRelease(parent_dict as *mut _);
                     CFRelease(props_dict as *mut _);
                     IOObjectRelease(disk);
                     IOObjectRelease(parent);
-                    return Err(Error::new(ErrorKind::Other, "CFDictionaryGetValueIfPresent: Bytes Read not found in the stats_dict"));
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "CFDictionaryGetValueIfPresent: Bytes Read not found in the stats_dict",
+                    ));
                 }
                 let number = write_bytes_nbr.assume_init();
                 CFNumberGetValue(number, 4, &mut read_bytes as *mut _ as *mut _);
@@ -282,17 +301,21 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
                 if CFDictionaryGetValueIfPresent(
                     stats_dict,
                     CFSTR(b"Bytes (Write)\0".as_ptr() as *mut i8) as *mut _,
-                    &mut read_bytes_nbr as *mut _ as *mut _
-                ) == 0 {
+                    &mut read_bytes_nbr as *mut _ as *mut _,
+                ) == 0
+                {
                     CFRelease(parent_dict as *mut _);
                     CFRelease(props_dict as *mut _);
                     IOObjectRelease(disk);
                     IOObjectRelease(parent);
-                    return Err(Error::new(ErrorKind::Other, "CFDictionaryGetValueIfPresent: Bytes Write not found in the stats_dict"));
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "CFDictionaryGetValueIfPresent: Bytes Write not found in the stats_dict",
+                    ));
                 }
                 let number = read_bytes_nbr.assume_init();
                 CFNumberGetValue(number, 4, &mut write_bytes as *mut _ as *mut _);
-                
+
                 let name = match CStr::from_ptr(name.as_mut_ptr()).to_str() {
                     Ok(val) => val.to_owned(),
                     Err(_) => String::from("?"),
@@ -312,7 +335,7 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
             disk = IOIteratorNext(disk_list);
         }
 
-        IOObjectRelease (disk_list);
+        IOObjectRelease(disk_list);
     }
 
     Ok(viostats)

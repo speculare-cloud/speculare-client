@@ -14,6 +14,7 @@ libc = "0.2.80"
 text_io = "0.1.8"
 env_logger = "0.8.1"
 serde_json = "1.0.59"
+lazy_static = "1.4.0"
 serde = { version = "1.0", features = ["derive"] }
 reqwest = { version = "0.10", features = ["blocking", "json"] }
 
@@ -27,6 +28,7 @@ io-kit-sys = "0.1.0"
 futures-util = "0.3.8"
 core-foundation-sys = "0.8.2"
 pin-project-internal = "1.0.2"
+mach = "0.3"
 
 [dev-dependencies]
 criterion = "0.3"

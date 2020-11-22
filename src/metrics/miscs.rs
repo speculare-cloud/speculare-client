@@ -1,6 +1,9 @@
 #[cfg(target_os = "linux")]
 use super::read_and_trim;
 
+use crate::cpu;
+#[cfg(target_os = "macos")]
+use crate::memory;
 use crate::models;
 
 #[cfg(target_os = "macos")]
@@ -8,17 +11,20 @@ use core_foundation_sys::{
     base::{kCFAllocatorDefault, CFRelease, CFTypeRef},
     string::{CFStringGetCString, CFStringRef},
 };
+use cpu::get_loadavg;
 #[cfg(target_os = "macos")]
 use io_kit_sys::*;
 #[cfg(target_os = "macos")]
 use io_kit_sys::{kIOMasterPortDefault, keys::kIOPlatformUUIDKey, IOServiceMatching};
 #[cfg(target_os = "macos")]
 use libc::c_char;
-#[cfg(target_family = "unix")]
-use libc::{c_double, getloadavg};
 #[cfg(target_os = "macos")]
 use libc::{c_void, sysctl, timeval};
-use models::{HostInfo, LoadAvg, Memory};
+#[cfg(target_os = "macos")]
+use memory::get_memory;
+use models::HostInfo;
+#[cfg(target_os = "linux")]
+use models::Memory;
 use nix::sys;
 #[cfg(target_os = "macos")]
 use std::ffi::CStr;
@@ -64,25 +70,6 @@ pub fn get_uptime() -> Result<Duration, Error> {
     }
 }
 
-/// Return the LoadAvg on any Unix system.
-#[cfg(target_family = "unix")]
-pub fn get_loadavg() -> Result<LoadAvg, Error> {
-    let mut data: [c_double; 3] = [0.0, 0.0, 0.0];
-
-    if unsafe { getloadavg(data.as_mut_ptr(), 3) } == -1 {
-        return Err(Error::new(
-            ErrorKind::Other,
-            "Invalid return for getloadavg",
-        ));
-    }
-
-    Ok(LoadAvg {
-        one: data[0],
-        five: data[1],
-        fifteen: data[2],
-    })
-}
-
 /// Get both hostname and os_version from the same single uname instance.
 #[cfg(target_os = "linux")]
 pub fn get_host_info() -> Result<HostInfo, Error> {
@@ -120,13 +107,7 @@ pub fn get_host_info() -> Result<HostInfo, Error> {
     let x = sys::utsname::uname();
     let uptime = get_uptime().unwrap().as_secs() as i64;
     let loadavg = get_loadavg().unwrap();
-    // TODO
-    let memory = Memory {
-        total_virt: 0,
-        total_swap: 0,
-        avail_virt: 0,
-        avail_swap: 0,
-    };
+    let memory = unsafe { get_memory() }?;
 
     Ok(HostInfo {
         loadavg,

@@ -1,5 +1,11 @@
+use crate::models;
+
+#[cfg(target_family = "unix")]
+use libc::{c_double, getloadavg};
 #[cfg(target_os = "macos")]
 use libc::{c_uint, c_void, sysctl};
+#[cfg(target_family = "unix")]
+use models::LoadAvg;
 #[cfg(target_family = "unix")]
 use std::io::{Error, ErrorKind};
 #[cfg(target_os = "linux")]
@@ -53,4 +59,23 @@ pub fn get_avg_cpufreq() -> Result<f64, Error> {
     } else {
         Ok(data as f64)
     }
+}
+
+/// Return the LoadAvg on any Unix system.
+#[cfg(target_family = "unix")]
+pub fn get_loadavg() -> Result<LoadAvg, Error> {
+    let mut data: [c_double; 3] = [0.0, 0.0, 0.0];
+
+    if unsafe { getloadavg(data.as_mut_ptr(), 3) } == -1 {
+        return Err(Error::new(
+            ErrorKind::Other,
+            "Invalid return for getloadavg",
+        ));
+    }
+
+    Ok(LoadAvg {
+        one: data[0],
+        five: data[1],
+        fifteen: data[2],
+    })
 }

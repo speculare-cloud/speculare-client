@@ -1,12 +1,32 @@
 pub mod cpu;
 pub mod disks;
+pub mod memory;
 pub mod miscs;
 pub mod models;
 pub mod network;
 pub mod sensors;
 pub mod users;
 
+#[cfg(target_os = "macos")]
+use mach::vm_types::integer_t;
 use std::{fs, io::Error};
+
+#[allow(non_camel_case_types)]
+#[cfg(target_os = "macos")]
+type host_flavor_t = integer_t;
+#[allow(non_camel_case_types)]
+#[cfg(target_os = "macos")]
+type host_info64_t = *mut integer_t;
+
+// Static reference to the page_size for memory
+#[cfg(target_os = "macos")]
+lazy_static::lazy_static! {
+    static ref PAGE_SIZE: u64 = {
+        unsafe {
+            libc::sysconf(libc::_SC_PAGESIZE) as u64
+        }
+    };
+}
 
 /// Read from path to content, trim it and return the String
 pub fn read_and_trim(path: &str) -> Result<String, Error> {

@@ -14,7 +14,11 @@ use mach::{
 #[cfg(target_os = "macos")]
 use models::vm_statistics64;
 use models::Memory;
+#[cfg(target_os = "linux")]
+use nix::sys;
 use std::io::Error;
+#[cfg(target_os = "linux")]
+use std::io::ErrorKind;
 
 #[cfg(target_os = "macos")]
 extern "C" {
@@ -31,7 +35,17 @@ extern "C" {
 /// Return the Memory struct.
 #[cfg(target_os = "linux")]
 pub fn get_memory() -> Result<Memory, Error> {
-    todo!()
+    let y = match sys::sysinfo::sysinfo() {
+        Ok(val) => val,
+        Err(x) => return Err(Error::new(ErrorKind::Other, x)),
+    };
+
+    Ok(Memory {
+        total_virt: y.ram_total() as i64,
+        total_swap: y.swap_total() as i64,
+        avail_virt: y.ram_unused() as i64,
+        avail_swap: y.swap_free() as i64,
+    })
 }
 
 /// Return the Memory struct using some syscall due to macos special shitty implementation.

@@ -154,42 +154,40 @@ pub fn get_uuid() -> Result<String, Error> {
     #[allow(unused_assignments)]
     let uuid: CFStringRef;
 
-    let platform_expert = unsafe {
-        IOServiceGetMatchingService(
+    unsafe {
+        let platform_expert = IOServiceGetMatchingService(
             kIOMasterPortDefault,
             IOServiceMatching(b"IOPlatformExpertDevice\0".as_ptr() as *const c_char),
-        )
-    };
-    if platform_expert != 0 {
-        let uuid_ascfstring: CFTypeRef = unsafe {
-            IORegistryEntryCreateCFProperty(
+        );
+        if platform_expert != 0 {
+            let uuid_ascfstring: CFTypeRef = IORegistryEntryCreateCFProperty(
                 platform_expert,
                 CFSTR(kIOPlatformUUIDKey),
                 kCFAllocatorDefault,
                 0,
-            )
-        };
-        if !uuid_ascfstring.is_null() {
-            uuid = uuid_ascfstring as CFStringRef;
+            );
+            if !uuid_ascfstring.is_null() {
+                uuid = uuid_ascfstring as CFStringRef;
+            } else {
+                return Err(Error::new(ErrorKind::Other, "Cannot get uuid_ascfstring"));
+            }
+            IOObjectRelease(platform_expert);
         } else {
-            return Err(Error::new(ErrorKind::Other, "Cannot get uuid_ascfstring"));
+            return Err(Error::new(
+                ErrorKind::Other,
+                "Cannot get the platform_expert",
+            ));
         }
-        unsafe { IOObjectRelease(platform_expert) };
-    } else {
-        return Err(Error::new(
-            ErrorKind::Other,
-            "Cannot get the platform_expert",
-        ));
-    }
 
-    let mut buffer = [1i8; 37];
-    if unsafe { CFStringGetCString(uuid, buffer.as_mut_ptr(), 37, 134217984) } == 0 {
-        return Err(Error::new(ErrorKind::Other, "Cannot get the buffer filled"));
-    }
-    unsafe { CFRelease(uuid as *mut c_void) };
+        let mut buffer = [1i8; 37];
+        if CFStringGetCString(uuid, buffer.as_mut_ptr(), 37, 134217984) == 0 {
+            return Err(Error::new(ErrorKind::Other, "Cannot get the buffer filled"));
+        }
+        CFRelease(uuid as *mut c_void);
 
-    match unsafe { CStr::from_ptr(buffer.as_mut_ptr()) }.to_str() {
-        Ok(val) => Ok(val.to_owned()),
-        Err(x) => Err(Error::new(ErrorKind::Other, x)),
+        match CStr::from_ptr(buffer.as_mut_ptr()).to_str() {
+            Ok(val) => Ok(val.to_owned()),
+            Err(x) => Err(Error::new(ErrorKind::Other, x)),
+        }
     }
 }

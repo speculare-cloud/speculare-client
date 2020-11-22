@@ -1,9 +1,7 @@
 #[cfg(target_os = "macos")]
 use libc::{c_uint, c_void, sysctl};
 #[cfg(target_family = "unix")]
-use std::io::Error;
-#[cfg(target_os = "macos")]
-use std::io::ErrorKind;
+use std::io::{Error, ErrorKind};
 #[cfg(target_os = "linux")]
 use std::{
     fs::File,
@@ -27,7 +25,10 @@ pub fn get_avg_cpufreq() -> Result<f64, Error> {
         }
     }
 
-    Ok(-1.0)
+    Err(Error::new(
+        ErrorKind::Other,
+        "Couldn't get the avg_cpu_freq",
+    ))
 }
 
 /// Return the avg cpu_freq as f64.

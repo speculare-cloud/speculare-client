@@ -3,12 +3,6 @@ use mach::vm_types::natural_t;
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
-pub struct Sensors {
-    pub label: String,
-    pub temp: f64,
-}
-
-#[derive(Debug, Serialize)]
 pub struct Disks {
     pub name: String,
     pub mount_point: String,

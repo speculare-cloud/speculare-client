@@ -1,4 +1,4 @@
-use metrics::models::{Disks, IoStats, LoadAvg, Memory, Sensors};
+use metrics::models::{Disks, IoStats, LoadAvg, Memory};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -15,7 +15,6 @@ pub struct Data {
     pub uptime: i64,
     pub cpu_freq: i64,
     pub load_avg: LoadAvg,
-    pub sensors: Vec<Sensors>,
     pub disks: Option<Vec<Disks>>,
     pub iostats: Option<Vec<IoStats>>,
     pub memory: Memory,

@@ -69,9 +69,5 @@ name = "network_bench"
 harness = false
 
 [[bench]]
-name = "sensors_bench"
-harness = false
-
-[[bench]]
 name = "users_bench"
 harness = false

@@ -1,6 +1,6 @@
 use crate::models::{Config, Data};
 
-use metrics::{cpu::*, disks::*, miscs::*, sensors::*, users::*};
+use metrics::{cpu::*, disks::*, miscs::*, users::*};
 use reqwest::blocking::Client;
 use std::io::{Error, ErrorKind};
 
@@ -22,7 +22,6 @@ pub fn collect_and_send(_client: &Client, _config: &Config) -> Result<(), Error>
             Err(_) => -1,
         },
         load_avg: host_info.loadavg,
-        sensors: get_sensors_data(),
         disks: match get_partitions_info() {
             Ok(val) => Some(val),
             Err(_) => None,

@@ -4,7 +4,6 @@ pub mod memory;
 pub mod miscs;
 pub mod models;
 pub mod network;
-pub mod sensors;
 pub mod users;
 
 #[cfg(target_os = "macos")]

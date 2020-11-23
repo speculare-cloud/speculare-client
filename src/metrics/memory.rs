@@ -33,6 +33,8 @@ extern "C" {
 }
 
 /// Return the Memory struct.
+/// 
+/// Might change to use (https://github.com/giampaolo/psutil/blob/21bb0822c7d30adc1e144e87d730cd67eb4fa828/psutil/_pslinux.py#L414).
 #[cfg(target_os = "linux")]
 pub fn get_memory() -> Result<Memory, Error> {
     let y = match sys::sysinfo::sysinfo() {

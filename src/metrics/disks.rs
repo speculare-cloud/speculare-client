@@ -157,8 +157,8 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
         }
         viostats.push(IoStats {
             device_name: fields[2].to_owned(),
-            sectors_read: fields[5].parse::<i64>().unwrap(),
-            sectors_wrtn: fields[9].parse::<i64>().unwrap(),
+            bytes_read: fields[5].parse::<i64>().unwrap() * 512,
+            bytes_wrtn: fields[9].parse::<i64>().unwrap() * 512,
         });
     }
 
@@ -324,8 +324,8 @@ pub fn get_iostats() -> Result<Vec<IoStats>, Error> {
 
                 viostats.push(IoStats {
                     device_name: name,
-                    sectors_read: read_bytes,
-                    sectors_wrtn: write_bytes,
+                    bytes_read: read_bytes,
+                    bytes_wrtn: write_bytes,
                 });
 
                 CFRelease(parent_dict as *mut _);

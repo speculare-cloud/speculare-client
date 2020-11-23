@@ -19,8 +19,8 @@ pub struct Disks {
 #[derive(Debug, Serialize)]
 pub struct IoStats {
     pub device_name: String,
-    pub sectors_read: i64,
-    pub sectors_wrtn: i64,
+    pub bytes_read: i64,
+    pub bytes_wrtn: i64,
 }
 
 #[derive(Debug, Serialize)]

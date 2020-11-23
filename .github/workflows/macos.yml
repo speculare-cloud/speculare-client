@@ -44,8 +44,14 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          target
+          target/debug
         key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          target/criterion
+        key: ${{ runner.os }}-cargo-bench-result
 
     - name: Run benches
       run: cargo bench

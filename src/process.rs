@@ -1,6 +1,6 @@
 use crate::models::{Config, Data};
 
-use metrics::{cpu::*, disks::*, miscs::*, users::*};
+use metrics_rs::{cpu::*, disks::*, miscs::*, users::*};
 use reqwest::blocking::Client;
 use std::io::{Error, ErrorKind};
 

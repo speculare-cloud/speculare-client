@@ -1,6 +1,6 @@
 use crate::models::{Config, Data};
 
-use metrics_rs::{cpu::*, disks::*, miscs::*, users::*};
+use sys_metrics::{cpu::*, disks::*, miscs::*, users::*};
 use reqwest::blocking::Client;
 use std::io::{Error, ErrorKind};
 
@@ -16,13 +16,13 @@ pub fn collect_and_send(_client: &Client, _config: &Config) -> Result<(), Error>
         uuid: get_uuid().expect("Cannot retrieve UUID"),
         os: host_info.os_version,
         hostname: host_info.hostname,
-        uptime: host_info.uptime,
-        cpu_freq: match get_avg_cpufreq() {
+        uptime: host_info.uptime as i64,
+        cpu_freq: match get_cpufreq() {
             Ok(val) => val as i64,
             Err(_) => -1,
         },
         load_avg: host_info.loadavg,
-        disks: match get_partitions_info() {
+        disks: match get_partitions_physical() {
             Ok(val) => Some(val),
             Err(_) => None,
         },
@@ -31,7 +31,10 @@ pub fn collect_and_send(_client: &Client, _config: &Config) -> Result<(), Error>
             Err(_) => None,
         },
         memory: host_info.memory,
-        users: get_users(),
+        users: match get_users() {
+            Ok(val) => Some(val),
+            Err(_) => None,
+        },
     };
 
     dbg!(dyndata);

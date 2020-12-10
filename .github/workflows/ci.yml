@@ -82,3 +82,8 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+      - name: Upload Test binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os || 'ubuntu-latest' }}-speculare-client
+          path: target/release/speculare-client

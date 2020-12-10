@@ -1,5 +1,5 @@
-use sys_metrics::{Disks, IoStats, LoadAvg, Memory};
 use serde::{Deserialize, Serialize};
+use sys_metrics::{Disks, IoStats, LoadAvg, Memory};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {

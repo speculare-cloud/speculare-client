@@ -2,7 +2,7 @@ use crate::models::Config;
 
 use std::io::{self, Write};
 
-pub fn entry_point() {
+pub fn config_mode() {
     print!("\nWhat is your api_token ?\n > ");
     io::stdout().flush().unwrap();
     let api_token: String = read!("{}\n");

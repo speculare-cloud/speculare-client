@@ -3,20 +3,20 @@ extern crate text_io;
 #[macro_use]
 extern crate log;
 
-mod config_mode;
+mod gathering;
 mod models;
-mod process;
+mod setup_config;
 
+use clap::{App, Arg, ArgMatches};
+use gathering::gathering;
 use models::Config;
-use process::collect_and_send;
 use std::fs::File;
 use std::io::BufReader;
 use std::{thread, time::Duration};
 
-/// Main which start the process and loop indefinietly.
-/// No other way to stop it than killing the process.
-#[cfg(any(target_os = "linux", target_os = "macos"))]
-fn main() {
+/// Init the logger (env_logger) and define the debug level
+/// based on debug or release build.
+fn init_logger() {
     // Define log as info for debug and error for prod
     let dbg_level = if cfg!(debug_assertions) {
         "info"
@@ -26,61 +26,95 @@ fn main() {
     std::env::set_var("RUST_LOG", dbg_level);
     // Init the logger
     env_logger::init();
+}
 
-    // Detect if we should run in init config mode
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() == 2 && args[1] == "--config" {
-        config_mode::entry_point();
-        return;
-    } else if args.len() == 2 {
-        error!(
-            "Wrong number of paramters or wrong parameters.\nUse with --config or no paramters."
-        );
-        return;
-    }
+/// Init the clap menu/args handling and return the ArgMatches instance.
+fn init_matches() -> ArgMatches {
+    App::new("Speculare-client")
+        .version("0.1.0")
+        .author("Martin A. <ma@rtin.fyi>")
+        .about("Collect metrics and send them to the server")
+        .arg(
+            Arg::new("config")
+                .short('c')
+                .long("config")
+                .about("Enter the interactive config mode")
+                .takes_value(false),
+        )
+        .arg(
+            Arg::new("path")
+                .short('p')
+                .long("path")
+                .about("Path to the config file")
+                .takes_value(true),
+        )
+        .get_matches()
+}
 
-    // Load the config into the env to use accross the prog
-    let home: String = match dirs::home_dir() {
-        Some(val) => val.to_string_lossy().into_owned(),
-        None => String::from("/"),
+/// Get the correct path for the config, open it and read it to the Config struct
+/// which is then returned.
+fn get_config(matches: &ArgMatches) -> Config {
+    // Determine the path of the config
+    let config_path = if matches.is_present("path") {
+        matches.value_of("path").unwrap()
+    } else {
+        "/etc/speculare/speculare.config"
     };
     // Open the config_file as File
-    let config_path = format!("{}/speculare.config", home);
     let config_file = match File::open(&config_path) {
         Ok(val) => val,
         Err(x) => {
-            error!("Can't open {}\nError: {}", &config_path, x);
-            return;
+            panic!("Can't open {}\nError: {}", &config_path, x);
         }
     };
     // Create a reader from the config_file
     let config_reader = BufReader::new(&config_file);
-
     // Convert the reader into Config struct
-    let config: Config = match serde_json::from_reader(config_reader) {
+    match serde_json::from_reader(config_reader) {
         Ok(val) => val,
         Err(x) => {
-            error!("Can't convert {}\nError: {}", &config_path, x);
-            return;
+            panic!("Can't convert {}\nError: {}", &config_path, x);
         }
-    };
+    }
+}
 
-    // Create the client instance for each loop
-    // Do not create a new one each time
+/// Main which start the process and loop indefinietly.
+///
+/// No other way to stop it than killing the process (for now).
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+fn main() {
+    // Init the logger and set the debug level correctly
+    init_logger();
+    // Construct the --help menu and handle args more efficiently
+    let matches = init_matches();
+    // Detect if the user asked for config mode
+    if matches.is_present("config") {
+        setup_config::config_mode();
+        return;
+    }
+    // Get the config structure
+    let config: Config = get_config(&matches);
+    // Max 15s of timeout per requests
     let timeout = Duration::new(15, 0);
-    // Create a single client instance for the app
+    // Create a single Client instance for the app
+    // blocking (for now) cause as of now, this app try to minimize CPU impact
     let client = reqwest::blocking::ClientBuilder::new()
         .timeout(timeout)
         .connect_timeout(timeout)
         .build()
         .expect("Failed to create the blocking client");
 
-    // Start the app loop
+    // Start the app loop (collect metrics and send them)
     loop {
-        match collect_and_send(&client, &config) {
-            Ok(x) => x,
-            Err(x) => warn!("Error when collect_and_send: {}", x),
-        };
+        // Collect all (needed) metrics
+        let data = gathering();
+        // For development purpose
+        dbg!(data);
+        // Send the metrics to the server as JSON
+        // match client.post(&config.api_url).json(&data).send() {
+        //     Ok(_val) => info!("Data send correctly"),
+        //     Err(x) => warn!("Error while sending the request: {}", x),
+        // };
         // Sleep for the interval defined above
         // don't spam the CPU nor the server
         thread::sleep(Duration::from_secs(1));

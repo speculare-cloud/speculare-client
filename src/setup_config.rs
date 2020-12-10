@@ -24,8 +24,8 @@ pub fn config_mode() {
     print!("Where should we save the config ? [{}]\n > ", path);
     stdout().flush().unwrap();
     let ask_path: String = read!("{}\n");
-    // If the return is not "", set path to the value
-    if ask_path != "" {
+    // If the ask_path is not empty, set it as our path
+    if !ask_path.is_empty() {
         path = ask_path;
     }
 

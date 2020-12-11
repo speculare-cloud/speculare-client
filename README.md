@@ -1,8 +1,7 @@
 Speculare client
 ========
 [![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](LICENSE)
-![macOS](https://github.com/Martichou/speculare-client/workflows/macOS/badge.svg)
-![Linux](https://github.com/Martichou/speculare-client/workflows/Linux/badge.svg)
+[![CI](https://github.com/Martichou/speculare-client/workflows/CI/badge.svg)](https://github.com/Martichou/speculare-server/actions)
 
 Speculare client (SP from now on) real-time monitoring Agent collects a lot of metrics from systems, hardware, VM, and applications with the least configuration possible. It runs permanently on your servers, computers, etc.
 

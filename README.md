@@ -1,7 +1,15 @@
-Speculare client
-========
+<div align="center">
+  <h1>Speculare Client</h1>
+  <p>
+    <strong>Metrics for your servers</strong>
+  </p>
+  <p>
+
 [![Apache 2 License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
-[![CI](https://github.com/Martichou/speculare-client/workflows/CI/badge.svg)](https://github.com/Martichou/speculare-server/actions)
+[![CI](https://github.com/Martichou/speculare-client/workflows/CI/badge.svg)](https://github.com/Martichou/speculare-client/actions)
+
+  </p>
+</div>
 
 Speculare client (SP from now on) real-time monitoring Agent collects a lot of metrics from systems, hardware, VM, and applications with the least configuration possible. It runs permanently on your servers, computers, etc.
 

@@ -38,8 +38,10 @@ async fn main() {
     // Create a single Client instance for the app
     let mut https_conn = HttpsConnector::new();
     https_conn.https_only(true);
-    
-    let client = Client::builder().http2_only(true).build::<_, hyper::Body>(https_conn);
+
+    let client = Client::builder()
+        .http2_only(true)
+        .build::<_, hyper::Body>(https_conn);
 
     // Get the default Data instance
     let mut data: Data = Data::default();
@@ -58,7 +60,7 @@ async fn main() {
             .header("content-type", "application/json")
             .body(Body::from(serde_json::to_string(&data).unwrap()))
             .unwrap();
-        
+
         let res = client.request(request).await;
         // Debug
         dbg!(res);

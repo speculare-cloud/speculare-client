@@ -32,7 +32,7 @@ Configuring after checkout (dev)
 
 - run speculare and create the config file
 ```bash
-➜  ~ cargo run --config
+➜  ~ cargo run -- --config
 ```
 
 Contributing

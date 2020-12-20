@@ -4,7 +4,7 @@ use clap::{App, Arg, ArgMatches};
 pub fn init_clap() -> ArgMatches {
     App::new("Speculare-client")
         .version("0.1.0")
-        .author("Martin A. <ma@rtin.fyi>")
+        .author("Martin A. <m@rtin.fyi>")
         .about("Collect metrics and send them to the server")
         .arg(
             Arg::new("config")

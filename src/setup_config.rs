@@ -1,4 +1,4 @@
-use crate::models::Config;
+use crate::options::Config;
 
 use std::fs::{create_dir_all, set_permissions, write, Permissions};
 use std::io::{stdout, Write};

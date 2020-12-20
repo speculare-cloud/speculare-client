@@ -17,7 +17,7 @@ serde_json = "1.0.60"
 serde = { version = "1.0", features = ["derive"] }
 sys_metrics = { git = "https://github.com/Martichou/sys_metrics" }
 text_io = "0.1.8"
-tokio = { version = "0.3", features = ["full"] }
+tokio = { version = "0.2", features = ["full"] }
 
 [[bin]]
 name = "speculare-client"

@@ -15,11 +15,13 @@ use hyper_tls::HttpsConnector;
 use options::config::{self, Config};
 use std::{thread, time::Duration};
 
+use std::error::Error;
+
 /// Entrypoint which start the process and loop indefinietly.
 ///
 /// No other way to stop it than killing the process (for now).
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>> {
     // Init the logger and set the debug level correctly
     logger::configure();
 
@@ -29,7 +31,7 @@ async fn main() {
     // Detect if the user asked for config mode
     if args.is_present("config") {
         setup_config::config_mode();
-        return;
+        return Ok(());
     }
 
     // Get the config structure
@@ -39,9 +41,7 @@ async fn main() {
     let mut https_conn = HttpsConnector::new();
     https_conn.https_only(true);
 
-    let client = Client::builder()
-        .http2_only(true)
-        .build::<_, hyper::Body>(https_conn);
+    let client = Client::builder().build::<_, hyper::Body>(https_conn);
 
     // Get the default Data instance
     let mut data: Data = Data::default();
@@ -50,10 +50,7 @@ async fn main() {
         // Refresh / Populate the Data structure
         data.eat_data();
 
-        // For development purpose
-        dbg!(&data);
-
-        // Testing
+        // Sending request to the server
         let request = Request::builder()
             .method(Method::POST)
             .uri(&config.api_url)
@@ -64,13 +61,7 @@ async fn main() {
         let res = client.request(request).await;
         // Debug
         dbg!(res);
-        // Send the metrics to the server as JSON
-        // match client.post(&config.api_url).json(&data).send() {
-        //     Ok(_val) => info!("Data send correctly"),
-        //     Err(x) => warn!("Error while sending the request: {}", x),
-        // };
-        // Sleep for the interval defined above
-        // don't spam the CPU nor the server
+        // Wait 1s before running again
         thread::sleep(Duration::from_secs(1));
     }
 }

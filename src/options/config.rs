@@ -1,13 +1,8 @@
+use crate::Config;
+
 use clap::ArgMatches;
-use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Config {
-    pub api_token: String,
-    pub api_url: String,
-}
 
 /// Get the correct path for the config, open it and read it to the Config struct
 /// which is then returned.

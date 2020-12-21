@@ -7,21 +7,21 @@ mod clap;
 mod harvest;
 mod logger;
 mod options;
-mod setup_config;
 
 use harvest::data_harvest::Data;
 use hyper::{Body, Client, Method, Request};
 use hyper_tls::HttpsConnector;
-use options::config::{self, Config};
+use options::{
+    config::{self},
+    config_prompt, Config,
+};
 use std::{thread, time::Duration};
-
-use std::error::Error;
 
 /// Entrypoint which start the process and loop indefinietly.
 ///
 /// No other way to stop it than killing the process (for now).
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() {
     // Init the logger and set the debug level correctly
     logger::configure();
 
@@ -30,8 +30,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Detect if the user asked for config mode
     if args.is_present("config") {
-        setup_config::config_mode();
-        return Ok(());
+        config_prompt::get_config_prompt();
+        return;
     }
 
     // Get the config structure

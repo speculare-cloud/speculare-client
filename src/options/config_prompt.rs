@@ -1,10 +1,10 @@
-use crate::options::Config;
+use crate::Config;
 
 use std::fs::{create_dir_all, set_permissions, write, Permissions};
 use std::io::{stdout, Write};
 use std::os::unix::fs::PermissionsExt;
 
-pub fn config_mode() {
+pub fn get_config_prompt() {
     // Get the api_url
     print!("What is your api_token ?\n > ");
     stdout().flush().unwrap();

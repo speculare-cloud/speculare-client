@@ -15,6 +15,30 @@ pub fn get_config_prompt() {
     stdout().flush().unwrap();
     let api_url: String = read!("{}\n");
 
+    // Get the harvest_interval
+    let mut harvest_interval: u64 = 1;
+    print!(
+        "At which interval do you want to harvest metrics from the host (secs) ? [{}]\n > ",
+        harvest_interval
+    );
+    stdout().flush().unwrap();
+    let ask_harvest_interval: String = read!("{}\n");
+    if !ask_harvest_interval.is_empty() {
+        harvest_interval = ask_harvest_interval.parse::<u64>().unwrap_or(1);
+    }
+
+    // Get the syncing_interval
+    let mut syncing_interval: u64 = 1;
+    print!(
+        "At which interval do you want to send the data to the server (secs) ? [{}]\n > ",
+        syncing_interval
+    );
+    stdout().flush().unwrap();
+    let ask_syncing_interval: String = read!("{}\n");
+    if !ask_syncing_interval.is_empty() {
+        syncing_interval = ask_syncing_interval.parse::<u64>().unwrap_or(1);
+    }
+
     // Asking the user if we should change the default path
     let mut path = "/etc/speculare";
     print!("Where should we save the config ? [{}]\n > ", path);
@@ -26,10 +50,15 @@ pub fn get_config_prompt() {
     }
 
     // Create the config object
-    let config = Config { api_token, api_url };
+    let config = Config {
+        api_token,
+        api_url,
+        harvest_interval,
+        syncing_interval,
+    };
     // Create the folders (for the path)
     match create_dir_all(path) {
-        Ok(_) => println!("Folders successfully created..."),
+        Ok(_) => {}
         Err(x) => {
             println!("Cannot create folders `{}` due to {}", path, x);
             return;

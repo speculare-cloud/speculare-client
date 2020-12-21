@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub api_token: String,
     pub api_url: String,
+    pub harvest_interval: u64,
+    pub syncing_interval: u64,
 }
 
 pub mod config;

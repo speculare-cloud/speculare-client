@@ -13,6 +13,7 @@ dirs-next = "2.0.0"
 env_logger = "0.8.2"
 hyper = "0.13.9"
 hyper-tls = "0.4.3"
+libloading = "0.6"
 log = "0.4.11"
 num-integer = "0.1"
 serde_json = "1.0.60"
@@ -25,6 +26,11 @@ tokio = { version = "0.2", features = ["full"] }
 name = "speculare-client"
 path = "src/main.rs"
 bench = false
+
+[lib]
+name = "active_users"
+path = "plugins/active_users/src/lib.rs"
+crate-type = ["dylib"]
 
 [profile.release]
 lto = true

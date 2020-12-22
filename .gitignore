@@ -1,3 +1,4 @@
 /target
 *.memo
 Cargo.lock
+plugins_compiled/

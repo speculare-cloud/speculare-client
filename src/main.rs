@@ -2,6 +2,7 @@
 extern crate text_io;
 #[macro_use]
 extern crate log;
+extern crate libloading as lib;
 extern crate num_integer;
 
 mod clap;
@@ -17,7 +18,7 @@ use options::{
     config::{self},
     config_prompt, Config,
 };
-use std::{thread, time::Duration};
+use std::{io::Error, thread, time::Duration};
 
 /// Entrypoint which start the process and loop indefinietly.
 ///
@@ -64,6 +65,32 @@ async fn main() {
         "Initialized the data_cache with a size of {}",
         syncing_threshold
     );
+
+    // Testing the dynamic lib loading
+    // Hardcoded for now, will load dynamically in function of what is present in a folder
+    // Need a lot of work to get a great plugin system
+    // TODO:
+    //  - Find how to get a fixed return type
+    //  - Find how to send the info so that the server can understand it correctly
+    //  - Add a helper function in the plugin so that the main client can know more info about it (?)
+    trace!("Starting to load the plugin (active_users)");
+    let lib_res = lib::Library::new("./plugins_compiled/libactive_users.so");
+    let lib: lib::Library;
+    if lib_res.is_err() {
+        error!("the plugin failed to load: {:?}", lib_res.err());
+    } else {
+        trace!("the plugin (active_users) has been loaded correctly");
+        lib = lib_res.unwrap();
+        // Calling the function inside the plugin
+        unsafe {
+            let func: lib::Symbol<unsafe extern "C" fn() -> Result<String, Error>> =
+                lib.get(b"entrypoint").unwrap();
+            info!(
+                "result of the entrypoint of the plugin (active_users) is: {:?}",
+                func()
+            );
+        }
+    }
 
     // Start the app loop (collect metrics and send them)
     loop {

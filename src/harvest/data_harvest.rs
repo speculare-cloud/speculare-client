@@ -1,5 +1,5 @@
+use chrono::prelude::Utc;
 use serde::Serialize;
-use std::time::Instant;
 use sys_metrics::{cpu::*, disks::*, host::*};
 use sys_metrics::{Disks, IoStats, LoadAvg, Memory};
 
@@ -15,6 +15,7 @@ pub struct Data {
     pub iostats: Option<Vec<IoStats>>,
     pub memory: Option<Memory>,
     pub users: Option<Vec<String>>,
+    pub created_at: chrono::NaiveDateTime,
 }
 
 impl Default for Data {
@@ -34,6 +35,7 @@ impl Default for Data {
             disks: None,
             iostats: None,
             users: None,
+            created_at: Utc::now().naive_local(),
         }
     }
 }
@@ -41,7 +43,7 @@ impl Default for Data {
 impl Data {
     pub fn eat_data(&mut self) {
         trace!("Eating data now...");
-        let eating_time = Instant::now();
+        let eating_time = Utc::now().naive_local();
         trace!("Eating_time: {:?}", eating_time);
 
         // Get the main host information (os, hostname, ...)
@@ -77,6 +79,8 @@ impl Data {
                 error!("[NF] Users fetching error: {}", err);
                 None
             }
-        }
+        };
+        // Set the time at which this has been created
+        self.created_at = eating_time;
     }
 }

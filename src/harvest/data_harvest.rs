@@ -14,7 +14,7 @@ pub struct Data {
     pub disks: Option<Vec<Disks>>,
     pub iostats: Option<Vec<IoStats>>,
     pub memory: Option<Memory>,
-    pub users: Option<Vec<String>>,
+    //pub users: Option<Vec<String>>, TODO - Move it to a plugin
     pub created_at: chrono::NaiveDateTime,
 }
 
@@ -34,7 +34,7 @@ impl Default for Data {
             load_avg: None,
             disks: None,
             iostats: None,
-            users: None,
+            //users: None, TODO - Move it to a plugin
             created_at: Utc::now().naive_local(),
         }
     }
@@ -71,14 +71,15 @@ impl Data {
                 None
             }
         };
+        // TODO - Move the users to a plugin
         // Get the users currently connected
-        self.users = match get_users() {
-            Ok(curr_users) => Some(curr_users),
-            Err(err) => {
-                error!("[NF] Users fetching error: {}", err);
-                None
-            }
-        };
+        // self.users = match get_users() {
+        //     Ok(curr_users) => Some(curr_users),
+        //     Err(err) => {
+        //         error!("[NF] Users fetching error: {}", err);
+        //         None
+        //     }
+        // };
         // Set the time at which this has been created
         self.created_at = eating_time;
     }

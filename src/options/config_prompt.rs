@@ -18,7 +18,7 @@ pub fn get_config_prompt() {
     // Get the harvest_interval
     let mut harvest_interval: u64 = 1;
     print!(
-        "At which interval do you want to harvest metrics from the host (secs) ? [{}]\n > ",
+        "At which interval do you want to harvest metrics from the host (secs) ? [default: {}]\n > ",
         harvest_interval
     );
     stdout().flush().unwrap();
@@ -30,7 +30,7 @@ pub fn get_config_prompt() {
     // Get the syncing_interval
     let mut syncing_interval: u64 = 1;
     print!(
-        "At which interval do you want to send the data to the server (secs) ? [{}]\n > ",
+        "At which interval do you want to send the data to the server (secs) ? [default: {}]\nNote: this must be a multiple of the harvest_interval.\n > ",
         syncing_interval
     );
     stdout().flush().unwrap();
@@ -72,7 +72,7 @@ pub fn get_config_prompt() {
         error!("Can't write file to {}\nError: {:?}", &path, res.err());
         return;
     }
-    println!("\nThe config has been written at {}/speculare.config", path);
+    println!("\nThe config has been written at {}", path);
 
     // Change permission over the file, only the current user can read/modify it
     match set_permissions(&path, Permissions::from_mode(0o600)) {

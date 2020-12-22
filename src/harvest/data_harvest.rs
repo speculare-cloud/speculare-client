@@ -1,7 +1,14 @@
 use chrono::prelude::Utc;
 use serde::Serialize;
+use std::cell::RefCell;
 use sys_metrics::{cpu::*, disks::*, host::*};
 use sys_metrics::{Disks, IoStats, LoadAvg, Memory};
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Plugin {
+    pub key: String,
+    pub val: String,
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {
@@ -15,6 +22,7 @@ pub struct Data {
     pub iostats: Option<Vec<IoStats>>,
     pub memory: Option<Memory>,
     pub created_at: chrono::NaiveDateTime,
+    pub plugins: RefCell<Vec<Plugin>>,
 }
 
 impl Default for Data {
@@ -34,6 +42,7 @@ impl Default for Data {
             disks: None,
             iostats: None,
             created_at: Utc::now().naive_local(),
+            plugins: RefCell::new(Vec::new()),
         }
     }
 }
@@ -71,5 +80,13 @@ impl Data {
         };
         // Set the time at which this has been created
         self.created_at = eating_time;
+    }
+
+    pub fn add_plugin(&mut self, plugin: Plugin) {
+        self.plugins.borrow_mut().push(plugin);
+    }
+
+    pub fn clear_plugins(&mut self) {
+        self.plugins.borrow_mut().clear();
     }
 }

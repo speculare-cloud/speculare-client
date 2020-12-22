@@ -10,7 +10,7 @@ mod harvest;
 mod logger;
 mod options;
 
-use harvest::data_harvest::Data;
+use harvest::data_harvest::{Data, Plugin};
 use hyper::{Body, Client, Method, Request};
 use hyper_tls::HttpsConnector;
 use num_integer::Integer;
@@ -19,6 +19,14 @@ use options::{
     config_prompt, Config,
 };
 use std::{io::Error, thread, time::Duration};
+
+fn build_client() -> Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>> {
+    // Create a Https "client" to be used in the Hyper Client
+    let mut https_conn = HttpsConnector::new();
+    https_conn.https_only(true);
+    // Create a single Client instance for the app
+    Client::builder().build::<_, hyper::Body>(https_conn)
+}
 
 /// Entrypoint which start the process and loop indefinietly.
 ///
@@ -40,30 +48,22 @@ async fn main() {
     // Get the config structure
     let config: Config = config::get_config(&args);
 
-    // Create a Https "client" to be used in the Hyper Client
-    let mut https_conn = HttpsConnector::new();
-    https_conn.https_only(true);
-    // Create a single Client instance for the app
-    let client = Client::builder().build::<_, hyper::Body>(https_conn);
+    // Build the client instance (*HTTP client)
+    let client = build_client();
 
-    // Int keeping track of the sending status
-    let mut syncing_track: u64 = 0;
+    // Int keeping track of the sending status// Compute the lcm of harvest_interval and syncing_interval to know when we should sync the data
     // Compute the lcm of harvest_interval and syncing_interval to know when we should sync the data
-    let syncing_threshold = config.harvest_interval.lcm(&config.syncing_interval);
-    // Debug printing
-    info!(
-        "Will sync after {} cycles (lcm of harvest_interval and syncing_interval)",
-        syncing_threshold
-    );
+    let (mut sync_track, sync_threshold) =
+        (0, config.harvest_interval.lcm(&config.syncing_interval));
 
     // Get the default Data instance
     let mut data: Data = Data::default();
 
     // Syncing memory cache
-    let mut data_cache: Vec<Data> = Vec::with_capacity(syncing_threshold as usize);
+    let mut data_cache: Vec<Data> = Vec::with_capacity(sync_threshold as usize);
     info!(
-        "Initialized the data_cache with a size of {}",
-        syncing_threshold
+        "Initialized the data_cache with a size of {} spaces",
+        sync_threshold
     );
 
     // Testing the dynamic lib loading
@@ -81,28 +81,42 @@ async fn main() {
     } else {
         trace!("the plugin (active_users) has been loaded correctly");
         lib = lib_res.unwrap();
+        // Get the instance of the function (fn) from the plugin
+        let func: lib::Symbol<fn() -> Result<String, Error>> =
+            unsafe { lib.get(b"entrypoint") }.unwrap();
         // Calling the function inside the plugin
-        unsafe {
-            let func: lib::Symbol<unsafe extern "C" fn() -> Result<String, Error>> =
-                lib.get(b"entrypoint").unwrap();
-            info!(
-                "result of the entrypoint of the plugin (active_users) is: {:?}",
-                func()
-            );
-        }
+        let func_res = func();
+        // Construct Plugin struct
+        let stri = func_res.unwrap();
+        data.add_plugin(Plugin {
+            key: String::from("active_users1"),
+            val: stri.to_owned(),
+        });
+        data.add_plugin(Plugin {
+            key: String::from("active_users2"),
+            val: stri.to_owned(),
+        });
+        data.add_plugin(Plugin {
+            key: String::from("active_users3"),
+            val: stri.to_owned(),
+        });
+        info!("result of the plugin (active_users) is: {:?}", func());
     }
-
     // Start the app loop (collect metrics and send them)
     loop {
         // Increment track of our syncing status
-        syncing_track += 1;
+        sync_track += 1;
         // Refresh / Populate the Data structure
         data.eat_data();
         // Saving data in a temp var/space if we don't sync it right away
         data_cache.push(data.clone());
         trace!("Data has been added to the data_cache");
+        // Clear the plugin Vec
+        // TODO - Guard behind "if plugins"
+        data.clear_plugins();
+        trace!("Plugins Vector has be cleared");
         // Checking if we should sync
-        if syncing_track % syncing_threshold == 0 {
+        if sync_track % sync_threshold == 0 {
             // Sending request to the server
             // TODO - Get rid of these unsafe unwrap
             let request = Request::builder()
@@ -120,17 +134,17 @@ async fn main() {
                     data_cache.clear();
                     trace!("data_cache has cleared");
                     // Reset the tracking counter
-                    syncing_track = 0;
+                    sync_track = 0;
                 }
                 Err(hyper_err) => {
                     error!("the POST request resulted in {:?}", hyper_err);
                     // If data_cache contains too many items due to previous error
-                    if data_cache.len() as u64 >= syncing_threshold * 10 {
+                    if data_cache.len() as u64 >= sync_threshold * 10 {
                         // drain the first (older) items to avoid taking too much memory
-                        data_cache.drain(0..(syncing_threshold * 2) as usize);
+                        data_cache.drain(0..(sync_threshold * 2) as usize);
                         warn!(
                             "draining the first {} items of the data_cache",
-                            syncing_threshold * 2
+                            sync_threshold * 2
                         )
                     }
                 }

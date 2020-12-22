@@ -47,12 +47,23 @@ async fn main() {
 
     // Int keeping track of the sending status
     let mut syncing_track: u64 = 0;
+    // Compute the lcm of harvest_interval and syncing_interval to know when we should sync the data
     let syncing_threshold = config.harvest_interval.lcm(&config.syncing_interval);
     // Debug printing
-    dbg!(syncing_threshold);
+    info!(
+        "Will sync after {} cycles (lcm of harvest_interval and syncing_interval)",
+        syncing_threshold
+    );
 
     // Get the default Data instance
     let mut data: Data = Data::default();
+
+    // Syncing memory cache
+    let mut data_cache: Vec<Data> = Vec::with_capacity(syncing_threshold as usize);
+    info!(
+        "Initialized the data_cache with a size of {}",
+        syncing_threshold
+    );
 
     // Start the app loop (collect metrics and send them)
     loop {
@@ -61,22 +72,42 @@ async fn main() {
         // Refresh / Populate the Data structure
         data.eat_data();
         // Saving data in a temp var/space if we don't sync it right away
-        // TODO
+        data_cache.push(data.clone());
+        trace!("Data has been added to the data_cache");
         // Checking if we should sync
-        if syncing_track == syncing_threshold {
-            syncing_track = 0;
+        if syncing_track % syncing_threshold == 0 {
             // Sending request to the server
             // TODO - Get rid of these unsafe unwrap
             let request = Request::builder()
                 .method(Method::POST)
                 .uri(&config.api_url)
                 .header("content-type", "application/json")
-                .body(Body::from(serde_json::to_string(&data).unwrap()))
+                .body(Body::from(serde_json::to_string(&data_cache).unwrap()))
                 .unwrap();
             // Execute the request
-            let res = client.request(request).await;
-            // Debug printing
-            dbg!(res);
+            trace!("sending POST request");
+            match client.request(request).await {
+                Ok(resp_body) => {
+                    trace!("the POST request resulted in {:?}", resp_body);
+                    // If no error, clear the data_cache
+                    data_cache.clear();
+                    trace!("data_cache has cleared");
+                    // Reset the tracking counter
+                    syncing_track = 0;
+                }
+                Err(hyper_err) => {
+                    error!("the POST request resulted in {:?}", hyper_err);
+                    // If data_cache contains too many items due to previous error
+                    if data_cache.len() as u64 >= syncing_threshold * 10 {
+                        // drain the first (older) items to avoid taking too much memory
+                        data_cache.drain(0..(syncing_threshold * 2) as usize);
+                        warn!(
+                            "draining the first {} items of the data_cache",
+                            syncing_threshold * 2
+                        )
+                    }
+                }
+            }
         }
         // Wait config.harvest_interval before running again
         // For syncing interval must be greater or equals to the harvest_interval

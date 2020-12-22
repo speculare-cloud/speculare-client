@@ -3,7 +3,7 @@ use serde::Serialize;
 use sys_metrics::{cpu::*, disks::*, host::*};
 use sys_metrics::{Disks, IoStats, LoadAvg, Memory};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Data {
     pub uuid: String,
     pub os: String,
@@ -42,7 +42,6 @@ impl Default for Data {
 
 impl Data {
     pub fn eat_data(&mut self) {
-        trace!("Eating data now...");
         let eating_time = Utc::now().naive_local();
         trace!("Eating_time: {:?}", eating_time);
 

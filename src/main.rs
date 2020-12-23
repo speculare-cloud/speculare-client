@@ -49,13 +49,10 @@ fn get_plugins() -> Option<HashMap<String, PluginInfo>> {
     };
     for path in paths {
         let path = path.unwrap();
-        debug!("check if {:?} is a plugin", path.path());
+        debug!("is {:?} a plugin", path.path());
         let lib = match lib::Library::new(path.path()) {
             Ok(library) => {
-                trace!(
-                    "the plugin ({:?}) has been loaded correctly",
-                    path.file_name()
-                );
+                trace!("plugin ({:?}) has been loaded correctly", path.file_name());
                 library
             }
             Err(err_lib) => {
@@ -63,11 +60,10 @@ fn get_plugins() -> Option<HashMap<String, PluginInfo>> {
                 continue;
             }
         };
+        // TODO - Get rid of unsafe unwrap
+        let info: fn() -> String = *(unsafe { lib.get(b"info") }.unwrap());
         let func: fn() -> Result<String, Error> = *(unsafe { lib.get(b"entrypoint") }.unwrap());
-        plugins.insert(
-            path.file_name().into_string().unwrap(),
-            PluginInfo { lib, func },
-        );
+        plugins.insert(info(), PluginInfo { lib, func });
     }
     if !plugins.is_empty() {
         Some(plugins)

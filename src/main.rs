@@ -18,6 +18,7 @@ use options::{
     config::{self},
     config_prompt, Config,
 };
+use std::collections::HashMap;
 use std::{io::Error, thread, time::Duration};
 
 fn build_client() -> Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>> {
@@ -26,6 +27,53 @@ fn build_client() -> Client<hyper_tls::HttpsConnector<hyper::client::HttpConnect
     https_conn.https_only(true);
     // Create a single Client instance for the app
     Client::builder().build::<_, hyper::Body>(https_conn)
+}
+
+#[derive(Debug)]
+struct PluginInfo {
+    pub lib: lib::Library,
+    pub func: fn() -> Result<String, Error>,
+}
+
+fn get_plugins() -> Option<HashMap<String, PluginInfo>> {
+    let mut plugins: HashMap<String, PluginInfo> = HashMap::new();
+    let paths = match std::fs::read_dir("./plugins_compiled") {
+        Ok(paths_res) => {
+            trace!("successfully read the plugins folder");
+            paths_res
+        }
+        Err(err_path) => {
+            error!("cannot read dir for plugins: {}", err_path);
+            return None;
+        }
+    };
+    for path in paths {
+        let path = path.unwrap();
+        debug!("check if {:?} is a plugin", path.path());
+        let lib = match lib::Library::new(path.path()) {
+            Ok(library) => {
+                trace!(
+                    "the plugin ({:?}) has been loaded correctly",
+                    path.file_name()
+                );
+                library
+            }
+            Err(err_lib) => {
+                error!("the plugin failed to load: {:?}", err_lib);
+                continue;
+            }
+        };
+        let func: fn() -> Result<String, Error> = *(unsafe { lib.get(b"entrypoint") }.unwrap());
+        plugins.insert(
+            path.file_name().into_string().unwrap(),
+            PluginInfo { lib, func },
+        );
+    }
+    if !plugins.is_empty() {
+        Some(plugins)
+    } else {
+        None
+    }
 }
 
 /// Entrypoint which start the process and loop indefinietly.
@@ -61,10 +109,7 @@ async fn main() {
 
     // Syncing memory cache
     let mut data_cache: Vec<Data> = Vec::with_capacity(sync_threshold as usize);
-    info!(
-        "Initialized the data_cache with a size of {} spaces",
-        sync_threshold
-    );
+    info!("data_cache with size = {} spaces", sync_threshold);
 
     // Testing the dynamic lib loading
     // Hardcoded for now, will load dynamically in function of what is present in a folder
@@ -73,48 +118,52 @@ async fn main() {
     //  - Find how to get a fixed return type
     //  - Find how to send the info so that the server can understand it correctly
     //  - Add a helper function in the plugin so that the main client can know more info about it (?)
-    trace!("Starting to load the plugin (active_users)");
-    let lib_res = lib::Library::new("./plugins_compiled/libactive_users.so");
-    let lib: lib::Library;
-    if lib_res.is_err() {
-        error!("the plugin failed to load: {:?}", lib_res.err());
-    } else {
-        trace!("the plugin (active_users) has been loaded correctly");
-        lib = lib_res.unwrap();
-        // Get the instance of the function (fn) from the plugin
-        let func: lib::Symbol<fn() -> Result<String, Error>> =
-            unsafe { lib.get(b"entrypoint") }.unwrap();
-        // Calling the function inside the plugin
-        let func_res = func();
-        // Construct Plugin struct
-        let stri = func_res.unwrap();
-        data.add_plugin(Plugin {
-            key: String::from("active_users1"),
-            val: stri.to_owned(),
-        });
-        data.add_plugin(Plugin {
-            key: String::from("active_users2"),
-            val: stri.to_owned(),
-        });
-        data.add_plugin(Plugin {
-            key: String::from("active_users3"),
-            val: stri.to_owned(),
-        });
-        info!("result of the plugin (active_users) is: {:?}", func());
+    let raw_plugins = get_plugins();
+    let has_plugins = raw_plugins.is_some();
+    info!("has plugin: {}", has_plugins);
+    let mut plugins = std::mem::MaybeUninit::<HashMap<String, PluginInfo>>::uninit();
+    if has_plugins {
+        unsafe { plugins.as_mut_ptr().write(raw_plugins.unwrap()) };
     }
+    let plugins = unsafe { plugins.assume_init() };
+
     // Start the app loop (collect metrics and send them)
     loop {
         // Increment track of our syncing status
         sync_track += 1;
         // Refresh / Populate the Data structure
         data.eat_data();
+        // Gather data from plugins
+        // Only if has_plugins
+        if has_plugins {
+            // Iterate over each items in the HashMap to gather metrics from all plugins
+            for (key, val) in &plugins {
+                // Execute the entrypoint and get the return of it
+                let res = match (val.func)() {
+                    Ok(res_func) => {
+                        info!("PLUGIN {} returned: {:?}", key, res_func);
+                        res_func
+                    }
+                    Err(err) => {
+                        error!("PLUGIN {} failed with: {}", key, err);
+                        continue;
+                    }
+                };
+                // Add the plugin data to the Data struct
+                data.add_plugin(Plugin {
+                    key: key.to_owned(),
+                    val: res,
+                });
+            }
+        }
         // Saving data in a temp var/space if we don't sync it right away
         data_cache.push(data.clone());
-        trace!("Data has been added to the data_cache");
-        // Clear the plugin Vec
-        // TODO - Guard behind "if plugins"
-        data.clear_plugins();
-        trace!("Plugins Vector has be cleared");
+        trace!("data_cache filled");
+        // Clear the plugin Vec only if has_plugins
+        if has_plugins {
+            data.clear_plugins();
+            trace!("plugins data cleared");
+        }
         // Checking if we should sync
         if sync_track % sync_threshold == 0 {
             // Sending request to the server
@@ -142,10 +191,7 @@ async fn main() {
                     if data_cache.len() as u64 >= sync_threshold * 10 {
                         // drain the first (older) items to avoid taking too much memory
                         data_cache.drain(0..(sync_threshold * 2) as usize);
-                        warn!(
-                            "draining the first {} items of the data_cache",
-                            sync_threshold * 2
-                        )
+                        warn!("draining 0..{} items of the data_cache", sync_threshold * 2)
                     }
                 }
             }

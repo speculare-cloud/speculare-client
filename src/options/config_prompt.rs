@@ -39,33 +39,57 @@ pub fn get_config_prompt() {
         syncing_interval = ask_syncing_interval.parse::<u64>().unwrap_or(1);
     }
 
-    // Asking the user if we should change the default path
-    let mut path = "/etc/speculare";
-    print!("Where should we save the config ? [{}]\n > ", path);
+    // Asking the user if we should change the configs path
+    let mut conf_path = "/usr/share/speculare/configs";
+    print!(
+        "Where should we save the config ? [default: {}]\n > ",
+        conf_path
+    );
     stdout().flush().unwrap();
     let ask_path: String = read!("{}\n");
     // If the ask_path is not empty, set it as our path
     if !ask_path.is_empty() {
-        path = &ask_path;
+        conf_path = &ask_path;
     }
 
+    // Asking the user if we should change the plugin path
+    let mut plug_path = "/usr/share/speculare/plugins";
+    print!(
+        "Where should we pick the plugins ? [default: {}]\n > ",
+        plug_path
+    );
+    stdout().flush().unwrap();
+    let ask_path: String = read!("{}\n");
+    // If the ask_path is not empty, set it as our path
+    if !ask_path.is_empty() {
+        plug_path = &ask_path;
+    }
     // Create the config object
     let config = Config {
         api_token,
         api_url,
         harvest_interval,
         syncing_interval,
+        plugins_path: plug_path.to_owned(),
     };
-    // Create the folders (for the path)
-    match create_dir_all(path) {
+    // Create the configs folder
+    match create_dir_all(conf_path) {
         Ok(_) => {}
         Err(x) => {
-            println!("Cannot create folders `{}` due to {}", path, x);
+            println!("Cannot create folders `{}` due to {}", conf_path, x);
+            return;
+        }
+    };
+    // Create the plugins folder
+    match create_dir_all(plug_path) {
+        Ok(_) => {}
+        Err(x) => {
+            println!("Cannot create folders `{}` due to {}", plug_path, x);
             return;
         }
     };
     // Construct our entire path
-    let path = format!("{}/speculare.config", path);
+    let path = format!("{}/speculare.config", conf_path);
     // Write the config the our file
     let res = write(&path, serde_json::to_string(&config).unwrap());
     if res.is_err() {

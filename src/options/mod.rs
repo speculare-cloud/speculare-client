@@ -6,6 +6,7 @@ pub struct Config {
     pub api_url: String,
     pub harvest_interval: u64,
     pub syncing_interval: u64,
+    pub plugins_path: String,
 }
 
 pub mod config;

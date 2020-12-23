@@ -11,7 +11,7 @@ pub fn get_config(args: &ArgMatches) -> Config {
     let config_path = if args.is_present("path") {
         args.value_of("path").unwrap()
     } else {
-        "/etc/speculare/speculare.config"
+        "/usr/share/speculare/configs/speculare.config"
     };
 
     // Open the config_file as File

@@ -35,9 +35,9 @@ struct PluginInfo {
     pub func: fn() -> Result<String, Error>,
 }
 
-fn get_plugins() -> Option<HashMap<String, PluginInfo>> {
+fn get_plugins(config: &Config) -> Option<HashMap<String, PluginInfo>> {
     let mut plugins: HashMap<String, PluginInfo> = HashMap::new();
-    let paths = match std::fs::read_dir("./plugins_compiled") {
+    let paths = match std::fs::read_dir(&config.plugins_path) {
         Ok(paths_res) => {
             trace!("successfully read the plugins folder");
             paths_res
@@ -48,6 +48,7 @@ fn get_plugins() -> Option<HashMap<String, PluginInfo>> {
         }
     };
     for path in paths {
+        // TODO - Get rid of unsafe unwrap
         let path = path.unwrap();
         debug!("is {:?} a plugin", path.path());
         let lib = match lib::Library::new(path.path()) {
@@ -114,7 +115,7 @@ async fn main() {
     //  - Find how to get a fixed return type
     //  - Find how to send the info so that the server can understand it correctly
     //  - Add a helper function in the plugin so that the main client can know more info about it (?)
-    let raw_plugins = get_plugins();
+    let raw_plugins = get_plugins(&config);
     let has_plugins = raw_plugins.is_some();
     info!("has plugin: {}", has_plugins);
     let mut plugins = std::mem::MaybeUninit::<HashMap<String, PluginInfo>>::uninit();

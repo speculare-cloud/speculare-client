@@ -10,67 +10,25 @@ mod harvest;
 mod logger;
 mod options;
 
-use harvest::data_harvest::{Data, Plugin};
+use harvest::data_harvest::Data;
 use hyper::{Body, Client, Method, Request};
 use hyper_tls::HttpsConnector;
 use num_integer::Integer;
 use options::{
     config::{self},
-    config_prompt, Config,
+    config_prompt,
+    plugins_init::{self},
+    Config, PluginsMap,
 };
-use std::collections::HashMap;
-use std::{io::Error, thread, time::Duration};
+use std::{thread, time::Duration};
 
+/// Generate the Hyper Client needed for the sync requests
 fn build_client() -> Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>> {
     // Create a Https "client" to be used in the Hyper Client
     let mut https_conn = HttpsConnector::new();
     https_conn.https_only(true);
     // Create a single Client instance for the app
     Client::builder().build::<_, hyper::Body>(https_conn)
-}
-
-#[derive(Debug)]
-struct PluginInfo {
-    pub lib: lib::Library,
-    pub func: fn() -> Result<String, Error>,
-}
-
-fn get_plugins(config: &Config) -> Option<HashMap<String, PluginInfo>> {
-    let mut plugins: HashMap<String, PluginInfo> = HashMap::new();
-    let paths = match std::fs::read_dir(&config.plugins_path) {
-        Ok(paths_res) => {
-            trace!("successfully read the plugins folder");
-            paths_res
-        }
-        Err(err_path) => {
-            error!("cannot read dir for plugins: {}", err_path);
-            return None;
-        }
-    };
-    for path in paths {
-        // TODO - Get rid of unsafe unwrap
-        let path = path.unwrap();
-        debug!("is {:?} a plugin", path.path());
-        let lib = match lib::Library::new(path.path()) {
-            Ok(library) => {
-                trace!("plugin ({:?}) has been loaded correctly", path.file_name());
-                library
-            }
-            Err(err_lib) => {
-                error!("the plugin failed to load: {:?}", err_lib);
-                continue;
-            }
-        };
-        // TODO - Get rid of unsafe unwrap
-        let info: fn() -> String = *(unsafe { lib.get(b"info") }.unwrap());
-        let func: fn() -> Result<String, Error> = *(unsafe { lib.get(b"entrypoint") }.unwrap());
-        plugins.insert(info(), PluginInfo { lib, func });
-    }
-    if !plugins.is_empty() {
-        Some(plugins)
-    } else {
-        None
-    }
 }
 
 /// Entrypoint which start the process and loop indefinietly.
@@ -108,20 +66,27 @@ async fn main() {
     let mut data_cache: Vec<Data> = Vec::with_capacity(sync_threshold as usize);
     info!("data_cache with size = {} spaces", sync_threshold);
 
-    // Testing the dynamic lib loading
-    // Hardcoded for now, will load dynamically in function of what is present in a folder
-    // Need a lot of work to get a great plugin system
-    // TODO:
-    //  - Find how to get a fixed return type
-    //  - Find how to send the info so that the server can understand it correctly
-    //  - Add a helper function in the plugin so that the main client can know more info about it (?)
-    let raw_plugins = get_plugins(&config);
-    let has_plugins = raw_plugins.is_some();
-    info!("has plugin: {}", has_plugins);
-    let mut plugins = std::mem::MaybeUninit::<HashMap<String, PluginInfo>>::uninit();
-    if has_plugins {
-        unsafe { plugins.as_mut_ptr().write(raw_plugins.unwrap()) };
-    }
+    // Load Plugins (if any)
+    let mut plugins = std::mem::MaybeUninit::<PluginsMap>::uninit();
+    let mut has_plugins: bool = false;
+    match plugins_init::get_plugins(&config) {
+        Ok(plug_map) => {
+            has_plugins = true;
+            info!("plugins successfully loaded");
+            // Use of unsafe is safe in this case as :
+            //  - we're not reading from the as_mut_ptr
+            //  - write is the first and only one we do to plugins,
+            //    so no fear to loose any previous value without dropping it.
+            unsafe { plugins.as_mut_ptr().write(plug_map) };
+        }
+        Err(plug_err) => {
+            warn!("the plugin init throw: {}", plug_err);
+        }
+    };
+    // //!\\ WARN UNSAFETY //!\\
+    // I assume it's safe to assume_init because I know what I'm doing with it.
+    // It MUST always be used behind a check if has_plugins is true or not.
+    // Used without this protection can lead to undefined behavior and potential overflow/...
     let plugins = unsafe { plugins.assume_init() };
 
     // Start the app loop (collect metrics and send them)
@@ -133,25 +98,7 @@ async fn main() {
         // Gather data from plugins
         // Only if has_plugins
         if has_plugins {
-            // Iterate over each items in the HashMap to gather metrics from all plugins
-            for (key, val) in &plugins {
-                // Execute the entrypoint and get the return of it
-                let res = match (val.func)() {
-                    Ok(res_func) => {
-                        info!("PLUGIN {} returned: {:?}", key, res_func);
-                        res_func
-                    }
-                    Err(err) => {
-                        error!("PLUGIN {} failed with: {}", key, err);
-                        continue;
-                    }
-                };
-                // Add the plugin data to the Data struct
-                data.add_plugin(Plugin {
-                    key: key.to_owned(),
-                    val: res,
-                });
-            }
+            data.eat_plugins(&plugins);
         }
         // Saving data in a temp var/space if we don't sync it right away
         data_cache.push(data.clone());

@@ -1,14 +1,10 @@
+use crate::options::{Plugin, PluginsMap};
+
 use chrono::prelude::Utc;
 use serde::Serialize;
 use std::cell::RefCell;
 use sys_metrics::{cpu::*, disks::*, host::*};
 use sys_metrics::{Disks, IoStats, LoadAvg, Memory};
-
-#[derive(Debug, Clone, Serialize)]
-pub struct Plugin {
-    pub key: String,
-    pub val: String,
-}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {
@@ -48,9 +44,10 @@ impl Default for Data {
 }
 
 impl Data {
+    /// Get each common metrics and "save" them in the Data struct
     pub fn eat_data(&mut self) {
-        let eating_time = Utc::now().naive_local();
-        trace!("Eating_time: {:?}", eating_time);
+        let eat_data_time = Utc::now().naive_local();
+        trace!("eat_data: {:?}", eat_data_time);
 
         // Get the main host information (os, hostname, ...)
         let host_info = get_host_info()
@@ -79,13 +76,39 @@ impl Data {
             }
         };
         // Set the time at which this has been created
-        self.created_at = eating_time;
+        self.created_at = eat_data_time;
     }
 
+    /// Get each plugins metrics and "save" them in the Data struct
+    pub fn eat_plugins(&mut self, plugins: &PluginsMap) {
+        trace!("eat_plugins: {:?}", Utc::now().naive_local());
+        // For each plugins, get their result and append to the Data
+        for (key, val) in plugins {
+            // Execute the entrypoint and get the return of it
+            let res = match (val.func)() {
+                Ok(res_func) => {
+                    debug!("PLUGIN {} returned: {:?}", key, res_func);
+                    res_func
+                }
+                Err(err) => {
+                    error!("PLUGIN {} failed with: {}", key, err);
+                    continue;
+                }
+            };
+            // Add the plugin data to the Data struct
+            self.add_plugin(Plugin {
+                key: key.to_owned(),
+                val: res,
+            });
+        }
+    }
+
+    /// Add Plugin struct (key/val) to the plugins field of Data
     pub fn add_plugin(&mut self, plugin: Plugin) {
         self.plugins.borrow_mut().push(plugin);
     }
 
+    /// Clear previous Plugin struct from the plugins field of Data
     pub fn clear_plugins(&mut self) {
         self.plugins.borrow_mut().clear();
     }

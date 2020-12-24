@@ -18,7 +18,7 @@ pub fn get_config_prompt() {
     // Get the harvest_interval
     let mut harvest_interval: u64 = 1;
     print!(
-        "At which interval do you want to harvest metrics from the host (secs) ? [default: {}]\n > ",
+        "How often do you want to harvest data from the host? (secs) [default: {}]\n > ",
         harvest_interval
     );
     stdout().flush().unwrap();
@@ -30,7 +30,7 @@ pub fn get_config_prompt() {
     // Get the syncing_interval
     let mut syncing_interval: u64 = 1;
     print!(
-        "At which interval do you want to send the data to the server (secs) ? [default: {}]\nNote: this must be a multiple of the harvest_interval.\n > ",
+        "How often do you want to send data to the server? (secs) [default: {}]\nNote: this must be a multiple of the harvest_interval.\n > ",
         syncing_interval
     );
     stdout().flush().unwrap();
@@ -41,10 +41,7 @@ pub fn get_config_prompt() {
 
     // Asking the user if we should change the configs path
     let mut conf_path = "/usr/share/speculare/configs";
-    print!(
-        "Where should we save the config ? [default: {}]\n > ",
-        conf_path
-    );
+    print!("Where to save the config ? [default: {}]\n > ", conf_path);
     stdout().flush().unwrap();
     let ask_path: String = read!("{}\n");
     // If the ask_path is not empty, set it as our path
@@ -54,10 +51,7 @@ pub fn get_config_prompt() {
 
     // Asking the user if we should change the plugin path
     let mut plug_path = "/usr/share/speculare/plugins";
-    print!(
-        "Where should we pick the plugins ? [default: {}]\n > ",
-        plug_path
-    );
+    print!("Where to look for plugins ? [default: {}]\n > ", plug_path);
     stdout().flush().unwrap();
     let ask_path: String = read!("{}\n");
     // If the ask_path is not empty, set it as our path
@@ -96,11 +90,11 @@ pub fn get_config_prompt() {
         error!("Can't write file to {}\nError: {:?}", &path, res.err());
         return;
     }
-    println!("\nThe config has been written at {}", path);
+    println!("\nThe configuration has been saved at {}", path);
 
     // Change permission over the file, only the current user can read/modify it
     match set_permissions(&path, Permissions::from_mode(0o600)) {
-        Ok(_) => println!("Successfully changing permission of the config file (600)."),
+        Ok(_) => println!("Successfully changed the permissions of the config file (chmod 600)."),
         Err(x) => println!(
             "Failed to change the permission of the config file (attempted 600) due to {}",
             x

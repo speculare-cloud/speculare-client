@@ -115,7 +115,7 @@ pub fn get_config_prompt() {
     // Construct our entire path
     let path = format!("{}/speculare.config", conf_path);
     // Write the config the our file
-    let res = write(&path, serde_json::to_string(&config).unwrap());
+    let res = write(&path, serde_json::to_string_pretty(&config).unwrap());
     if res.is_err() {
         error!("Can't write file to {}\nError: {:?}", &path, res.err());
         return;

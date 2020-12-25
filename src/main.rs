@@ -34,12 +34,16 @@ fn build_client() -> Client<hyper_tls::HttpsConnector<hyper::client::HttpConnect
 }
 
 /// Generate the Request to be sent by the Hyper Client
-fn build_request(api_url: &str, data_cache: &[Data]) -> Result<hyper::Request<hyper::Body>, Error> {
+fn build_request(
+    api_url: &str,
+    token: &str,
+    data_cache: &[Data],
+) -> Result<hyper::Request<hyper::Body>, Error> {
     match Request::builder()
         .method(Method::POST)
         .uri(api_url)
         .header("content-type", "application/json")
-        .header("Foo", "Bar\r\n")
+        .header("Authorization", format!("Bearer {}", token))
         .body(Body::from(serde_json::to_string(data_cache).unwrap()))
     {
         Ok(req) => Ok(req),
@@ -131,7 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Checking if we should sync
         if sync_track % sync_threshold == 0 {
             // Sending request to the server
-            let request = build_request(&config.api_url, &data_cache);
+            let request = build_request(&config.api_url, &config.api_token, &data_cache);
             // If the request couldn't be created, exit and print
             if request.is_err() {
                 error!("request builder: {}", request.unwrap_err());

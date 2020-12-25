@@ -29,6 +29,17 @@ fn build_client() -> Client<hyper_tls::HttpsConnector<hyper::client::HttpConnect
     Client::builder().build::<_, hyper::Body>(https_conn)
 }
 
+/// Generate the Request to be sent by the Hyper Client
+/// TODO - Get rid of these unsafe unwrap
+fn build_request(api_url: &str, data_cache: &[Data]) -> hyper::Request<hyper::Body> {
+    Request::builder()
+        .method(Method::POST)
+        .uri(api_url)
+        .header("content-type", "application/json")
+        .body(Body::from(serde_json::to_string(data_cache).unwrap()))
+        .unwrap()
+}
+
 /// Entrypoint which start the process and loop indefinietly.
 ///
 /// No other way to stop it than killing the process (for now).
@@ -109,13 +120,9 @@ async fn main() {
         // Checking if we should sync
         if sync_track % sync_threshold == 0 {
             // Sending request to the server
-            // TODO - Get rid of these unsafe unwrap
-            let request = Request::builder()
-                .method(Method::POST)
-                .uri(&config.api_url)
-                .header("content-type", "application/json")
-                .body(Body::from(serde_json::to_string(&data_cache).unwrap()))
-                .unwrap();
+            let request = build_request(&config.api_url, &data_cache);
+            trace!("request is ready to be sent");
+
             // Execute the request
             trace!("sending POST request");
             match client.request(request).await {

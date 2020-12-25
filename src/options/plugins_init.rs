@@ -10,7 +10,7 @@ pub fn get_plugins(config: &Config) -> Result<PluginsMap, Error> {
         // TODO - Get rid of unsafe unwrap
         let path = path.unwrap();
         debug!("is {:?} a plugin", path.path());
-        let lib = match lib::Library::new(path.path()) {
+        let lib = match libloading::Library::new(path.path()) {
             Ok(library) => {
                 trace!("plugin ({:?}) loaded correctly", path.file_name());
                 library

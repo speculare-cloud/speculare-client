@@ -14,7 +14,7 @@ pub struct Config {
 
 #[derive(Debug)]
 pub struct PluginInfo {
-    pub lib: lib::Library,
+    pub lib: libloading::Library,
     pub func: fn() -> Result<String, Error>,
 }
 

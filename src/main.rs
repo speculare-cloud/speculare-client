@@ -2,8 +2,6 @@
 extern crate text_io;
 #[macro_use]
 extern crate log;
-extern crate libloading as lib;
-extern crate num_integer;
 
 mod clap;
 mod harvest;

@@ -18,7 +18,11 @@ use options::{
     plugins_init::{self},
     Config, PluginsMap,
 };
-use std::{thread, time::Duration};
+use std::{
+    io::{Error, ErrorKind},
+    thread,
+    time::Duration,
+};
 
 /// Generate the Hyper Client needed for the sync requests
 fn build_client() -> Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>> {
@@ -30,21 +34,24 @@ fn build_client() -> Client<hyper_tls::HttpsConnector<hyper::client::HttpConnect
 }
 
 /// Generate the Request to be sent by the Hyper Client
-/// TODO - Get rid of these unsafe unwrap
-fn build_request(api_url: &str, data_cache: &[Data]) -> hyper::Request<hyper::Body> {
-    Request::builder()
+fn build_request(api_url: &str, data_cache: &[Data]) -> Result<hyper::Request<hyper::Body>, Error> {
+    match Request::builder()
         .method(Method::POST)
         .uri(api_url)
         .header("content-type", "application/json")
+        .header("Foo", "Bar\r\n")
         .body(Body::from(serde_json::to_string(data_cache).unwrap()))
-        .unwrap()
+    {
+        Ok(req) => Ok(req),
+        Err(err_req) => Err(Error::new(ErrorKind::Other, err_req)),
+    }
 }
 
 /// Entrypoint which start the process and loop indefinietly.
 ///
 /// No other way to stop it than killing the process (for now).
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Init the logger and set the debug level correctly
     logger::configure();
 
@@ -54,7 +61,7 @@ async fn main() {
     // Detect if the user asked for config mode
     if args.is_present("config") {
         config_prompt::get_config_prompt();
-        return;
+        return Ok(());
     }
 
     // Get the config structure
@@ -63,7 +70,7 @@ async fn main() {
     // Build the client instance (*HTTP client)
     let client = build_client();
 
-    // Int keeping track of the sending status// Compute the lcm of harvest_interval and syncing_interval to know when we should sync the data
+    // Int keeping track of the sending status
     // Compute the lcm of harvest_interval and syncing_interval to know when we should sync the data
     let (mut sync_track, sync_threshold) =
         (0, config.harvest_interval.lcm(&config.syncing_interval));
@@ -89,7 +96,11 @@ async fn main() {
             unsafe { plugins.as_mut_ptr().write(plug_map) };
         }
         Err(plug_err) => {
-            warn!("the plugin init throw: {}", plug_err);
+            // This initialization as zeroed is used to prevent SEGFault
+            // when reaching end of the program, cause Rust try to drop the value
+            // as we assume plugins as init later.
+            plugins = unsafe { std::mem::zeroed() };
+            warn!("plugins_init throw: {}", plug_err);
         }
     };
     // //!\\ WARN UNSAFETY //!\\
@@ -121,11 +132,16 @@ async fn main() {
         if sync_track % sync_threshold == 0 {
             // Sending request to the server
             let request = build_request(&config.api_url, &data_cache);
+            // If the request couldn't be created, exit and print
+            if request.is_err() {
+                error!("request builder: {}", request.unwrap_err());
+                break;
+            }
             trace!("request is ready to be sent");
 
             // Execute the request
             trace!("sending POST request");
-            match client.request(request).await {
+            match client.request(request.unwrap()).await {
                 Ok(resp_body) => {
                     trace!("the POST request resulted in {:?}", resp_body);
                     // If no error, clear the data_cache
@@ -150,4 +166,6 @@ async fn main() {
         // so just base this sleep on the harvest_interval value.
         thread::sleep(Duration::from_secs(config.harvest_interval));
     }
+
+    Ok(())
 }

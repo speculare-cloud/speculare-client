@@ -12,15 +12,16 @@ chrono = { version = "0.4", features = ["serde"] }
 env_logger = "0.8"
 hyper = { version = "0.14", features = ["full"] }
 hyper-tls = "0.5"
-libloading = "0.6"
+libloading = "0.7"
 log = "0.4"
 num-integer = "0.1"
+openssl = { version = "0.10", features = ["vendored"] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 sys_metrics = { git = "https://github.com/Martichou/sys_metrics" }
 termion = "1.5"
 text_io = "0.1"
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
 
 [[bin]]
 name = "speculare-client"

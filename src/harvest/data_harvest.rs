@@ -27,6 +27,8 @@ impl Default for Data {
             .unwrap_or_else(|err| panic!("Cannot get host_info of the host:{}", err));
 
         Data {
+            // UUID can still be empty on some Linux platform (such as WSL)
+            // TODO - Generate one ? I don't know yet
             uuid: get_uuid().unwrap_or_else(|err| panic!("Cannot get UUID of the host:{}", err)),
             os: host_info.os_version,
             hostname: host_info.hostname,

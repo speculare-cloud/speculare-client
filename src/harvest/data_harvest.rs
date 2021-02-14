@@ -2,7 +2,6 @@ use crate::options::{Plugin, PluginsMap};
 
 use chrono::prelude::Utc;
 use serde::Serialize;
-use std::cell::RefCell;
 use sys_metrics::{cpu::*, disks::*, host::*};
 use sys_metrics::{Disks, IoStats, LoadAvg, Memory};
 
@@ -18,7 +17,7 @@ pub struct Data {
     pub iostats: Option<Vec<IoStats>>,
     pub memory: Option<Memory>,
     pub created_at: chrono::NaiveDateTime,
-    pub plugins: RefCell<Vec<Plugin>>,
+    pub plugins: Vec<Plugin>,
 }
 
 impl Default for Data {
@@ -38,7 +37,7 @@ impl Default for Data {
             disks: None,
             iostats: None,
             created_at: Utc::now().naive_local(),
-            plugins: RefCell::new(Vec::new()),
+            plugins: Vec::new(),
         }
     }
 }
@@ -105,11 +104,11 @@ impl Data {
 
     /// Add Plugin struct (key/val) to the plugins field of Data
     pub fn add_plugin(&mut self, plugin: Plugin) {
-        self.plugins.borrow_mut().push(plugin);
+        self.plugins.push(plugin);
     }
 
     /// Clear previous Plugin struct from the plugins field of Data
     pub fn clear_plugins(&mut self) {
-        self.plugins.borrow_mut().clear();
+        self.plugins.clear();
     }
 }

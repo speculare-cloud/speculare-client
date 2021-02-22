@@ -18,6 +18,7 @@ num-integer = "0.1"
 openssl = { version = "0.10", features = ["vendored"] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+sha1 = "0.6.0"
 sys_metrics = { git = "https://github.com/Martichou/sys_metrics" }
 termion = "1.5"
 text_io = "0.1"

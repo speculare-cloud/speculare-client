@@ -26,10 +26,15 @@ impl Default for Data {
         let host_info = get_host_info()
             .unwrap_or_else(|err| panic!("Cannot get host_info of the host:{}", err));
 
+        // UUID can still be empty on some Linux platform (such as WSL)
+        let mut uuid = get_uuid().unwrap_or_else(|err| panic!("Cannot get UUID of the host:{}", err));
+        // As a workaround for blank UUID, set the uuid to be the sha1 of hostname
+        if uuid.is_empty() {
+            uuid = sha1::Sha1::from(&host_info.hostname).digest().to_string();
+        }
+
         Data {
-            // UUID can still be empty on some Linux platform (such as WSL)
-            // TODO - Generate one ? I don't know yet
-            uuid: get_uuid().unwrap_or_else(|err| panic!("Cannot get UUID of the host:{}", err)),
+            uuid,
             os: host_info.os_version,
             hostname: host_info.hostname,
             uptime: 0,

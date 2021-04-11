@@ -22,7 +22,7 @@ pub fn get_config_prompt() {
 
     // Get the api_url
     cwrite!(format!(
-        "{}What is your api_url ?\n > {}",
+        "{}What is your api_url ? (https://[DOMAIN]:[PORT]/api/hosts)\n > {}",
         color::Fg(color::Reset),
         color::Fg(color::Blue)
     ));

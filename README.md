@@ -16,6 +16,16 @@ Speculare client (SP from now on) real-time monitoring Agent collects a lot of m
 You can install SP on almost every platform (Linux, macOS, Windows).
 As things stand, SP is still in heavy development and is expected to become much more complex and complete over time.
 
+Dev setup
+--------------------------
+
+- Install all deps
+```bash
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+# postgresql-12 is optional
+$ sudo apt-get install libpq-dev pkg-config
+```
+
 Download
 --------------------------
 

@@ -8,7 +8,8 @@ use sys_metrics::{Disks, IoStats, LoadAvg, Memory, CpuStat};
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {
     pub uuid: String,
-    pub os: String,
+    pub system: String,
+    pub os_version: String,
     pub hostname: String,
     pub uptime: i64,
     pub cpu_stat: Option<CpuStat>,
@@ -36,7 +37,8 @@ impl Default for Data {
 
         Data {
             uuid,
-            os: host_info.os_version,
+            system: host_info.system,
+            os_version: host_info.os_version,
             hostname: host_info.hostname,
             uptime: 0,
             cpu_stat: None,

@@ -3,7 +3,7 @@ use crate::options::{Plugin, PluginsMap};
 use chrono::prelude::Utc;
 use serde::Serialize;
 use sys_metrics::{cpu::*, disks::*, host::*};
-use sys_metrics::{CpuStat, Disks, IoStats, LoadAvg, Memory};
+use sys_metrics::{CpuStats, Disks, IoStats, LoadAvg, Memory};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {
@@ -12,7 +12,7 @@ pub struct Data {
     pub os_version: String,
     pub hostname: String,
     pub uptime: i64,
-    pub cpu_stat: Option<CpuStat>,
+    pub cpu_stats: Option<CpuStats>,
     pub load_avg: Option<LoadAvg>,
     pub disks: Option<Vec<Disks>>,
     pub iostats: Option<Vec<IoStats>>,
@@ -41,7 +41,7 @@ impl Default for Data {
             os_version: host_info.os_version,
             hostname: host_info.hostname,
             uptime: 0,
-            cpu_stat: None,
+            cpu_stats: None,
             memory: None,
             load_avg: None,
             disks: None,
@@ -64,10 +64,10 @@ impl Data {
         // Assign self value to the value from host_info
         // Convert to i64, cause as of now the server doesn't handle u64
         self.uptime = host_info.uptime as i64;
-        self.cpu_stat = match get_cpustat() {
-            Ok(cpustat) => Some(cpustat),
+        self.cpu_stats = match get_cpustats() {
+            Ok(cpustats) => Some(cpustats),
             Err(err) => {
-                error!("[NF] CpuStat fetching error: {}", err);
+                error!("[NF] CpuStats fetching error: {}", err);
                 None
             }
         };

@@ -3,7 +3,7 @@ use crate::options::{Plugin, PluginsMap};
 use chrono::prelude::Utc;
 use serde::Serialize;
 use sys_metrics::{cpu::*, disks::*, host::*};
-use sys_metrics::{Disks, IoStats, LoadAvg, Memory, CpuStat};
+use sys_metrics::{CpuStat, Disks, IoStats, LoadAvg, Memory};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {

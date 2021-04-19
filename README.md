@@ -22,8 +22,7 @@ Dev setup
 - Install all deps
 ```bash
 $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-# postgresql-12 is optional
-$ sudo apt-get install libpq-dev pkg-config
+$ sudo apt-get install libssl-dev libpq-dev pkg-config build-essential
 ```
 
 Download

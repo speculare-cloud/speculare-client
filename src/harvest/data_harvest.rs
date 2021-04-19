@@ -3,7 +3,7 @@ use crate::options::{Plugin, PluginsMap};
 use chrono::prelude::Utc;
 use serde::Serialize;
 use sys_metrics::{cpu::*, disks::*, host::*};
-use sys_metrics::{Disks, IoStats, LoadAvg, Memory};
+use sys_metrics::{Disks, IoStats, LoadAvg, Memory, CpuStat};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {
@@ -11,7 +11,7 @@ pub struct Data {
     pub os: String,
     pub hostname: String,
     pub uptime: i64,
-    pub cpu_freq: i64,
+    pub cpu_stat: Option<CpuStat>,
     pub load_avg: Option<LoadAvg>,
     pub disks: Option<Vec<Disks>>,
     pub iostats: Option<Vec<IoStats>>,
@@ -39,7 +39,7 @@ impl Default for Data {
             os: host_info.os_version,
             hostname: host_info.hostname,
             uptime: 0,
-            cpu_freq: -1,
+            cpu_stat: None,
             memory: None,
             load_avg: None,
             disks: None,
@@ -62,10 +62,15 @@ impl Data {
         // Assign self value to the value from host_info
         // Convert to i64, cause as of now the server doesn't handle u64
         self.uptime = host_info.uptime as i64;
+        self.cpu_stat = match get_cpustat() {
+            Ok(cpustat) => Some(cpustat),
+            Err(err) => {
+                error!("[NF] CpuStat fetching error: {}", err);
+                None
+            }
+        };
         self.load_avg = Some(host_info.loadavg);
         self.memory = Some(host_info.memory);
-        // Get the cpu_freq info (maybe more info in the future) or set as -1
-        self.cpu_freq = get_cpufreq().unwrap_or(-1.0) as i64;
         // Get the disks info (mountpath, used, ...) for physical disks
         self.disks = match get_partitions_physical() {
             Ok(partitions_phy) => Some(partitions_phy),

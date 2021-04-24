@@ -2,8 +2,10 @@ use crate::options::{Plugin, PluginsMap};
 
 use chrono::prelude::Utc;
 use serde::Serialize;
-use sys_metrics::{cpu::*, disks::*, host::*};
-use sys_metrics::{CpuStats, Disks, IoStats, LoadAvg, Memory};
+use sys_metrics::{
+    cpu::CpuStats, cpu::LoadAvg, disks::Disks, disks::IoStats, memory::Memory, memory::Swap,
+};
+use sys_metrics::{cpu::*, disks::*, host::*, memory::*};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {
@@ -17,6 +19,7 @@ pub struct Data {
     pub disks: Option<Vec<Disks>>,
     pub iostats: Option<Vec<IoStats>>,
     pub memory: Option<Memory>,
+    pub swap: Option<Swap>,
     pub created_at: chrono::NaiveDateTime,
     pub plugins: Vec<Plugin>,
 }
@@ -42,10 +45,11 @@ impl Default for Data {
             hostname: host_info.hostname,
             uptime: 0,
             cpu_stats: None,
-            memory: None,
             load_avg: None,
             disks: None,
             iostats: None,
+            memory: None,
+            swap: None,
             created_at: Utc::now().naive_local(),
             plugins: Vec::new(),
         }
@@ -64,20 +68,21 @@ impl Data {
         // Assign self value to the value from host_info
         // Convert to i64, cause as of now the server doesn't handle u64
         self.uptime = host_info.uptime as i64;
+        // Get the cpustats info (user, idle, ...)
         self.cpu_stats = match get_cpustats() {
             Ok(cpustats) => Some(cpustats),
             Err(err) => {
-                error!("[NF] CpuStats fetching error: {}", err);
+                error!("[Eating] CpuStats fetching error: {}", err);
                 None
             }
         };
+        // Get the avg cpu load for 1, 5, 15mins
         self.load_avg = Some(host_info.loadavg);
-        self.memory = Some(host_info.memory);
-        // Get the disks info (mountpath, used, ...) for physical disks
+        // Get the disks info (mount_path, used, ...) for physical disks
         self.disks = match get_partitions_physical() {
             Ok(partitions_phy) => Some(partitions_phy),
             Err(err) => {
-                error!("[NF] Disks fetching error: {}", err);
+                error!("[Eating] Disks fetching error: {}", err);
                 None
             }
         };
@@ -85,7 +90,23 @@ impl Data {
         self.iostats = match get_iostats_physical() {
             Ok(iostats_phy) => Some(iostats_phy),
             Err(err) => {
-                error!("[NF] Iostats fetching error: {}", err);
+                error!("[Eating] Iostats fetching error: {}", err);
+                None
+            }
+        };
+        // Get the memory info (total, free, cached, ...)
+        self.memory = match get_memory() {
+            Ok(memory) => Some(memory),
+            Err(err) => {
+                error!("[Eating] Memory fetching error: {}", err);
+                None
+            }
+        };
+        // Get the swap info (total, free, cached, ...)
+        self.swap = match get_swap() {
+            Ok(swap) => Some(swap),
+            Err(err) => {
+                error!("[Eating] Swap fetching error: {}", err);
                 None
             }
         };

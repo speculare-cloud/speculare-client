@@ -75,9 +75,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = build_client();
 
     // Int keeping track of the sending status
+    let mut sync_track = 0;
     // Compute the lcm of harvest_interval and syncing_interval to know when we should sync the data
-    let (mut sync_track, sync_threshold) =
-        (0, config.harvest_interval.lcm(&config.syncing_interval));
+    let sync_threshold = config.harvest_interval.lcm(&config.syncing_interval);
 
     // Get the default Data instance
     let mut data: Data = Data::default();

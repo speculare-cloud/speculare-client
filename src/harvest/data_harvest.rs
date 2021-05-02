@@ -2,10 +2,7 @@ use crate::options::{Plugin, PluginsMap};
 
 use chrono::prelude::Utc;
 use serde::Serialize;
-use sys_metrics::{
-    cpu::CpuStats, cpu::LoadAvg, disks::Disks, disks::IoStats, memory::Memory, memory::Swap,
-};
-use sys_metrics::{cpu::*, disks::*, host::*, memory::*};
+use sys_metrics::{cpu::*, disks::*, host::*, memory::*, network::*};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {
@@ -15,11 +12,13 @@ pub struct Data {
     pub hostname: String,
     pub uptime: i64,
     pub cpu_stats: Option<CpuStats>,
+    pub cpu_times: Option<CpuTimes>,
     pub load_avg: Option<LoadAvg>,
     pub disks: Option<Vec<Disks>>,
     pub iostats: Option<Vec<IoStats>>,
     pub memory: Option<Memory>,
     pub swap: Option<Swap>,
+    pub iocounters: Option<Vec<IoCounters>>,
     pub created_at: chrono::NaiveDateTime,
     pub plugins: Vec<Plugin>,
 }
@@ -45,11 +44,13 @@ impl Default for Data {
             hostname: host_info.hostname,
             uptime: 0,
             cpu_stats: None,
+            cpu_times: None,
             load_avg: None,
             disks: None,
             iostats: None,
             memory: None,
             swap: None,
+            iocounters: None,
             created_at: Utc::now().naive_local(),
             plugins: Vec::new(),
         }
@@ -68,11 +69,19 @@ impl Data {
         // Assign self value to the value from host_info
         // Convert to i64, cause as of now the server doesn't handle u64
         self.uptime = host_info.uptime as i64;
-        // Get the cpustats info (user, idle, ...)
+        // Get the cpustats info (interrupts, ...)
         self.cpu_stats = match get_cpustats() {
             Ok(cpustats) => Some(cpustats),
             Err(err) => {
                 error!("[Eating] CpuStats fetching error: {}", err);
+                None
+            }
+        };
+        // Get the cputimes info (user, idle, ...)
+        self.cpu_times = match get_cputimes() {
+            Ok(cputimes) => Some(cputimes),
+            Err(err) => {
+                error!("[Eating] CpuTimes fetching error: {}", err);
                 None
             }
         };
@@ -86,7 +95,7 @@ impl Data {
                 None
             }
         };
-        // Get the iostats (read/wrtn) for physical disks
+        // Get the iostats (read/wrtn, ...) for physical disks
         self.iostats = match get_iostats_physical() {
             Ok(iostats_phy) => Some(iostats_phy),
             Err(err) => {
@@ -102,11 +111,19 @@ impl Data {
                 None
             }
         };
-        // Get the swap info (total, free, cached, ...)
+        // Get the swap info (total, free, ...)
         self.swap = match get_swap() {
             Ok(swap) => Some(swap),
             Err(err) => {
                 error!("[Eating] Swap fetching error: {}", err);
+                None
+            }
+        };
+        // Get the network iocounters
+        self.iocounters = match get_net_iocounters() {
+            Ok(iocounters) => Some(iocounters),
+            Err(err) => {
+                error!("[Eating] IoCounters fetching error: {}", err);
                 None
             }
         };

@@ -43,7 +43,7 @@ fn build_request(
         .method(Method::POST)
         .uri(api_url)
         .header("content-type", "application/json")
-        .header("Authorization", format!("Bearer {}", token))
+        .header("SPTK", token)
         .body(Body::from(serde_json::to_string(data_cache).unwrap()))
     {
         Ok(req) => Ok(req),

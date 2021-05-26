@@ -120,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         sync_track += 1;
         load_track += 1;
         // Refresh / Populate the Data structure
-        data.eat_data(sync_track % loadavg_threshold == 0);
+        data.eat_data(load_track % loadavg_threshold == 0);
         // Reset loadavg tracker
         if load_track % loadavg_threshold == 0 {
             load_track = 0;

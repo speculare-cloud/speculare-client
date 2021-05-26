@@ -74,11 +74,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = build_client();
 
     // Int keeping track of the sending status
-    let mut sync_track = 0;
-    let mut load_track = 0;
+    let mut sync_track:i64 = -1;
+    let mut load_track:i64 = -1;
     // Compute after how many harvest_interval the data has to be sent, and loadavg gathered
-    let sync_threshold = config.harvest_interval * config.syncing_interval;
-    let loadavg_threshold = config.harvest_interval * config.loadavg_interval;
+    let sync_threshold = (config.harvest_interval * config.syncing_interval) as i64;
+    let loadavg_threshold = (config.harvest_interval * config.loadavg_interval) as i64;
 
     // Get the default Data instance
     let mut data: Data = Data::default();
@@ -163,7 +163,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(hyper_err) => {
                     error!("the POST request resulted in {:?}", hyper_err);
                     // If data_cache contains too many items due to previous error
-                    if data_cache.len() as u64 >= sync_threshold * 10 {
+                    if data_cache.len() as i64 >= sync_threshold * 10 {
                         // drain the first (older) items to avoid taking too much memory
                         data_cache.drain(0..(sync_threshold * 2) as usize);
                         warn!("draining 0..{} items of the data_cache", sync_threshold * 2)

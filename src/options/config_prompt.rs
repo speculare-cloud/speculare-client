@@ -41,10 +41,23 @@ pub fn get_config_prompt() {
         harvest_interval = ask_harvest_interval.parse::<u64>().unwrap_or(1);
     }
 
+    // Get the loadavg_interval
+    let mut loadavg_interval: u64 = 5;
+    cwrite!(format!(
+        "{}How often do you want to harvest data from the host? (harvest_interval * this value) [default: {}]\n > {}",
+        color::Fg(color::Reset),
+        loadavg_interval,
+        color::Fg(color::Blue)
+    ));
+    let ask_loadavg_interval: String = read!("{}\n");
+    if !ask_loadavg_interval.is_empty() {
+        loadavg_interval = ask_loadavg_interval.parse::<u64>().unwrap_or(5);
+    }
+
     // Get the syncing_interval
     let mut syncing_interval: u64 = 1;
     cwrite!(format!(
-        "{}How often do you want to send data to the server? (secs) [default: {}]\n{}{}{}\n > {}",
+        "{}How often do you want to send data to the server? (harvest_interval * this value) [default: {}]\n{}{}{}\n > {}",
         color::Fg(color::Reset),
         syncing_interval,
         style::Italic,
@@ -94,6 +107,7 @@ pub fn get_config_prompt() {
         api_url,
         harvest_interval,
         syncing_interval,
+        loadavg_interval,
         plugins_path: plug_path.to_owned(),
     };
     // Create the configs folder

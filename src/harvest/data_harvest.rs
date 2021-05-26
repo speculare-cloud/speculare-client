@@ -59,7 +59,7 @@ impl Default for Data {
 
 impl Data {
     /// Get each common metrics and "save" them in the Data struct
-    pub fn eat_data(&mut self) {
+    pub fn eat_data(&mut self, load_avg: bool) {
         let eat_data_time = Utc::now().naive_local();
         trace!("eat_data: {:?}", eat_data_time);
 
@@ -86,7 +86,12 @@ impl Data {
             }
         };
         // Get the avg cpu load for 1, 5, 15mins
-        self.load_avg = Some(host_info.loadavg);
+        // Don't update everytime, depend on the config info
+        self.load_avg = if load_avg {
+            Some(host_info.loadavg)
+        } else {
+            None
+        };
         // Get the disks info (mount_path, used, ...) for physical disks
         self.disks = match get_partitions_physical() {
             Ok(partitions_phy) => Some(partitions_phy),

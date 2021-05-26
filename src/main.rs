@@ -11,7 +11,6 @@ mod options;
 use harvest::data_harvest::Data;
 use hyper::{Body, Client, Method, Request};
 use hyper_tls::HttpsConnector;
-use num_integer::Integer;
 use options::{
     config::{self},
     config_prompt,
@@ -76,8 +75,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Int keeping track of the sending status
     let mut sync_track = 0;
-    // Compute the lcm of harvest_interval and syncing_interval to know when we should sync the data
-    let sync_threshold = config.harvest_interval.lcm(&config.syncing_interval);
+    let mut load_track = 0;
+    // Compute after how many harvest_interval the data has to be sent, and loadavg gathered
+    let sync_threshold = config.harvest_interval * config.syncing_interval;
+    let loadavg_threshold = config.harvest_interval * config.loadavg_interval;
 
     // Get the default Data instance
     let mut data: Data = Data::default();
@@ -117,8 +118,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         // Increment track of our syncing status
         sync_track += 1;
+        load_track += 1;
         // Refresh / Populate the Data structure
-        data.eat_data();
+        data.eat_data(sync_track % loadavg_threshold == 0);
+        // Reset loadavg tracker
+        if load_track % loadavg_threshold == 0 {
+            load_track = 0;
+        }
         // Gather data from plugins
         // Only if has_plugins
         if has_plugins {

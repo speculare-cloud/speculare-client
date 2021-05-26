@@ -74,8 +74,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = build_client();
 
     // Int keeping track of the sending status
-    let mut sync_track:i64 = -1;
-    let mut load_track:i64 = -1;
+    let mut sync_track: i64 = -1;
+    let mut load_track: i64 = -1;
     // Compute after how many harvest_interval the data has to be sent, and loadavg gathered
     let sync_threshold = (config.harvest_interval * config.syncing_interval) as i64;
     let loadavg_threshold = (config.harvest_interval * config.loadavg_interval) as i64;

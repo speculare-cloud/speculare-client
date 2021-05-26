@@ -1,5 +1,5 @@
 use std::io::Error;
-use sys_metrics::host::get_users;
+use sys_metrics::host::get_logged_users;
 
 #[no_mangle]
 pub fn info() -> String {
@@ -8,7 +8,7 @@ pub fn info() -> String {
 
 #[no_mangle]
 pub fn entrypoint() -> Result<String, Error> {
-    match serde_json::to_string(&get_users()?) {
+    match serde_json::to_string(&get_logged_users()?) {
         Ok(res_str) => Ok(res_str),
         Err(serde_err) => Err(Error::from(serde_err)),
     }

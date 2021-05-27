@@ -30,6 +30,8 @@ Download
 
 You can find lastest versioned archives [here](https://github.com/Martichou/speculare-client/releases), with binaries for all platforms.
 
+You can also find debug build in the CI'artifacts [here](https://github.com/speculare-cloud/speculare-client/actions/workflows/ci.yml).
+
 ### Configurations
 ```bash
 ➜  ~ speculare-client --config

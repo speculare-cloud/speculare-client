@@ -124,8 +124,8 @@ impl Data {
                 None
             }
         };
-        // Get the network iocounters
-        self.iocounters = match get_net_iocounters() {
+        // Get the network (physical) iocounters
+        self.iocounters = match get_net_physical_iocounters() {
             Ok(iocounters) => Some(iocounters),
             Err(err) => {
                 error!("[Eating] IoCounters fetching error: {}", err);

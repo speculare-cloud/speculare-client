@@ -60,6 +60,11 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+      - name: Upload Test binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os || 'ubuntu-latest' }}-speculare-client-${{ env.GITHUB_SHA }}
+          path: target/debug/speculare-client
 
   nightly:
     name: linux / nightly
@@ -82,8 +87,3 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-      - name: Upload Test binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.os || 'ubuntu-latest' }}-speculare-client
-          path: target/debug/speculare-client

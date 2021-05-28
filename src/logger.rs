@@ -10,7 +10,7 @@ pub fn configure() {
             if cfg!(debug_assertions) {
                 "trace"
             } else {
-                "error"
+                "warn"
             },
         );
     }

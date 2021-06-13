@@ -7,6 +7,7 @@
 
 [![Apache 2 License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 [![CI](https://github.com/Martichou/speculare-client/workflows/CI/badge.svg)](https://github.com/Martichou/speculare-client/actions)
+[![Docs](https://img.shields.io/badge/Docs-latest-green.svg)](https://docs.speculare.cloud)
 
   </p>
 </div>
@@ -28,7 +29,7 @@ $ sudo apt-get install libssl-dev libpq-dev pkg-config build-essential
 Download
 --------------------------
 
-You can find lastest versioned archives [here](https://github.com/Martichou/speculare-client/releases), with binaries for all platforms.
+You can find latest versioned archives [here](https://github.com/Martichou/speculare-client/releases), with binaries for all platforms.
 
 You can also find debug build in the CI'artifacts [here](https://github.com/speculare-cloud/speculare-client/actions/workflows/ci.yml).
 

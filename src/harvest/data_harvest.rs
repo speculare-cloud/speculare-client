@@ -15,10 +15,10 @@ pub struct Data {
     pub cpu_times: Option<CpuTimes>,
     pub load_avg: Option<LoadAvg>,
     pub disks: Option<Vec<Disks>>,
-    pub iostats: Option<Vec<IoStats>>,
+    pub ioblocks: Option<Vec<IoStats>>,
     pub memory: Option<Memory>,
     pub swap: Option<Swap>,
-    pub iocounters: Option<Vec<IoCounters>>,
+    pub ionets: Option<Vec<IoCounters>>,
     pub created_at: chrono::NaiveDateTime,
     pub plugins: Vec<Plugin>,
 }
@@ -47,10 +47,10 @@ impl Default for Data {
             cpu_times: None,
             load_avg: None,
             disks: None,
-            iostats: None,
+            ioblocks: None,
             memory: None,
             swap: None,
-            iocounters: None,
+            ionets: None,
             created_at: Utc::now().naive_local(),
             plugins: Vec::new(),
         }
@@ -101,10 +101,10 @@ impl Data {
             }
         };
         // Get the iostats (read/wrtn, ...) for physical disks
-        self.iostats = match get_iostats_physical() {
-            Ok(iostats_phy) => Some(iostats_phy),
+        self.ioblocks = match get_iostats_physical() {
+            Ok(ioblocks) => Some(ioblocks),
             Err(err) => {
-                error!("[Eating] Iostats fetching error: {}", err);
+                error!("[Eating] Ioblocks fetching error: {}", err);
                 None
             }
         };
@@ -125,10 +125,10 @@ impl Data {
             }
         };
         // Get the network (physical) iocounters
-        self.iocounters = match get_net_physical_iocounters() {
-            Ok(iocounters) => Some(iocounters),
+        self.ionets = match get_net_physical_iocounters() {
+            Ok(ionets) => Some(ionets),
             Err(err) => {
-                error!("[Eating] IoCounters fetching error: {}", err);
+                error!("[Eating] Ionets fetching error: {}", err);
                 None
             }
         };

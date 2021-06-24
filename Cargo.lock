@@ -882,7 +882,7 @@ dependencies = [
 [[package]]
 name = "sys_metrics"
 version = "0.2.1"
-source = "git+https://github.com/Martichou/sys_metrics#a8607a4d42a0b38e893d76715dd368b978cc7a78"
+source = "git+https://github.com/Martichou/sys_metrics#f1bce1933fd6f643155ea34d1923719c5f6962e0"
 dependencies = [
  "core-foundation-sys 0.8.2",
  "io-kit-sys",

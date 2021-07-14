@@ -10,7 +10,6 @@ mod options;
 
 use harvest::data_harvest::Data;
 use hyper::{Body, Client, Method, Request};
-use hyper_tls::HttpsConnector;
 use options::{
     config::{self},
     config_prompt,
@@ -24,10 +23,9 @@ use std::{
 };
 
 /// Generate the Hyper Client needed for the sync requests
-fn build_client() -> Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>> {
+fn build_client() -> Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
     // Create a Https "client" to be used in the Hyper Client
-    let mut https_conn = HttpsConnector::new();
-    https_conn.https_only(true);
+    let https_conn = hyper_rustls::HttpsConnector::with_native_roots();
     // Create a single Client instance for the app
     Client::builder().build::<_, hyper::Body>(https_conn)
 }

@@ -149,6 +149,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Wait config.harvest_interval before running again
         // For syncing interval must be greater or equals to the harvest_interval
         // so just base this sleep on the harvest_interval value.
+        // => Doing so doesn't guaratee that we'll gather values every config.harvest_interval
+        // due to the time we take to gather data and send it over the network.
+        // Gathering and sending is not async so it's more like (time_to_gather_&_send + config.harvest_interval).
         thread::sleep(Duration::from_secs(config.harvest_interval));
     }
 

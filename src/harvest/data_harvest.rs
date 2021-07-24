@@ -27,12 +27,14 @@ impl Default for Data {
             .unwrap_or_else(|err| panic!("Cannot get host_info of the host:{}", err));
 
         // UUID can still be empty on some Linux platform (such as WSL)
-        let mut uuid =
-            get_uuid().unwrap_or_else(|err| panic!("Cannot get UUID of the host:{}", err));
-        // As a workaround for blank UUID, set the uuid to be the sha1 of hostname
-        if uuid.is_empty() {
-            uuid = sha1::Sha1::from(&host_info.hostname).digest().to_string();
-        }
+        // as per https://man7.org/linux/man-pages/man5/machine-id.5.html
+        // the machine-id should never be shared on the network or other.
+        let uuid = sha1::Sha1::from(match get_uuid() {
+            Ok(value) => value,
+            Err(_) => host_info.hostname.clone(),
+        })
+        .digest()
+        .to_string();
 
         Data {
             uuid,

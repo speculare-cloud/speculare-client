@@ -1,26 +1,28 @@
 #[macro_use]
-extern crate text_io;
-#[macro_use]
 extern crate log;
 
-mod clap;
 mod harvest;
 mod logger;
-mod options;
 
+use config::*;
 use harvest::data_harvest::Data;
 use hyper::{Body, Client, Method, Request};
-use options::{
-    config::{self},
-    config_prompt,
-    plugins_init::{self},
-    Config, PluginsMap,
-};
+use serde::{Deserialize, Serialize};
+use std::path::Path;
 use std::{
     io::{Error, ErrorKind},
     thread,
     time::Duration,
 };
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct InnerConfig {
+    pub api_token: String,
+    pub api_url: String,
+    pub harvest_interval: u64,
+    pub syncing_interval: u64,
+    pub loadavg_interval: u64,
+}
 
 /// Generate the Hyper Client needed for the sync requests
 fn build_client() -> Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
@@ -56,24 +58,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Init the logger and set the debug level correctly
     logger::configure();
 
-    // Construct the --help menu and parse args more efficiently
-    let args = clap::init_clap();
+    // Get arguments
+    let args: Vec<String> = std::env::args().collect();
 
-    // Detect if the user asked for config mode
-    if args.is_present("config") {
-        config_prompt::get_config_prompt();
-        return Ok(());
+    // Verify if we have the correct number of arguments
+    if args.len() != 2 {
+        println!(
+            "speculare-client: too {} arguments\n❯ speculare-client \"path/to/Config.toml\"",
+            if args.len() > 2 { "many" } else { "few" }
+        );
+        std::process::exit(1);
     }
 
-    // Get the config structure
-    let config: Config = config::get_config(&args);
+    // Load the configuration from the file passed as param
+    let mut config = Config::default();
+    config.merge(File::from(Path::new(&args[1]))).unwrap();
 
-    // Build the client instance (*HTTP client)
+    // Get the config structure
+    let config: InnerConfig = config.try_into().unwrap();
+
+    // Build the client instance (HTTP client)
     let client = build_client();
 
     // Int keeping track of the sending status
     let mut sync_track: i64 = -1;
     let mut load_track: i64 = -1;
+
     // Compute after how many harvest_interval the data has to be sent, and loadavg gathered
     let sync_threshold = (config.harvest_interval * config.syncing_interval) as i64;
     let loadavg_threshold = (config.harvest_interval * config.loadavg_interval) as i64;
@@ -82,60 +92,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut data: Data = Data::default();
 
     // Syncing memory cache
-    let mut data_cache: Vec<Data> = Vec::with_capacity(sync_threshold as usize);
-    info!("data_cache with size = {} spaces", sync_threshold);
-
-    // Load Plugins (if any)
-    let mut plugins = std::mem::MaybeUninit::<PluginsMap>::uninit();
-    let mut has_plugins: bool = false;
-    match plugins_init::get_plugins(&config) {
-        Ok(plug_map) => {
-            has_plugins = true;
-            info!("plugins successfully loaded");
-            // Use of unsafe is safe in this case as :
-            //  - we're not reading from the as_mut_ptr
-            //  - write is the first and only one we do to plugins,
-            //    so no fear to loose any previous value without dropping it.
-            unsafe { plugins.as_mut_ptr().write(plug_map) };
-        }
-        Err(plug_err) => {
-            // This initialization as zeroed is used to prevent SEGFault
-            // when reaching end of the program, cause Rust try to drop the value
-            // as we assume plugins as init later.
-            plugins = unsafe { std::mem::zeroed() };
-            warn!("plugins_init throw: {}", plug_err);
-        }
-    };
-    // //!\\ WARN UNSAFETY //!\\
-    // I assume it's safe to assume_init because I know what I'm doing with it.
-    // It MUST always be used behind a check if has_plugins is true or not.
-    // Used without this protection can lead to undefined behavior and potential overflow/...
-    let plugins = unsafe { plugins.assume_init() };
+    let cache_size = std::cmp::max(sync_threshold, 16);
+    let mut data_cache: Vec<Data> = Vec::with_capacity(cache_size as usize);
+    info!("data_cache with size = {} spaces", cache_size);
 
     // Start the app loop (collect metrics and send them)
     loop {
         // Increment track of our syncing status
         sync_track += 1;
         load_track += 1;
+        // Define if we should gather loadavg or not
+        let get_loadavg = load_track % loadavg_threshold == 0;
         // Refresh / Populate the Data structure
-        data.eat_data(load_track % loadavg_threshold == 0);
+        data.eat_data(get_loadavg);
         // Reset loadavg tracker
         if load_track % loadavg_threshold == 0 {
             load_track = 0;
         }
-        // Gather data from plugins
-        // Only if has_plugins
-        if has_plugins {
-            data.eat_plugins(&plugins);
-        }
         // Saving data in a temp var/space if we don't sync it right away
         data_cache.push(data.clone());
         trace!("data_cache filled");
-        // Clear the plugin Vec only if has_plugins
-        if has_plugins {
-            data.clear_plugins();
-            trace!("plugins data cleared");
-        }
         // Checking if we should sync
         if sync_track % sync_threshold == 0 {
             // Sending request to the server
@@ -161,10 +137,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(hyper_err) => {
                     error!("the POST request resulted in {:?}", hyper_err);
                     // If data_cache contains too many items due to previous error
-                    if data_cache.len() as i64 >= sync_threshold * 10 {
+                    if data_cache.len() as i64 >= cache_size * 2 {
                         // drain the first (older) items to avoid taking too much memory
-                        data_cache.drain(0..(sync_threshold * 2) as usize);
-                        warn!("draining 0..{} items of the data_cache", sync_threshold * 2)
+                        let to_drain = cache_size / 2;
+                        data_cache.drain(0..to_drain as usize);
+                        warn!("draining 0..{} items of the data_cache", to_drain)
                     }
                 }
             }

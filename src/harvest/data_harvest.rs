@@ -1,5 +1,3 @@
-use crate::options::{Plugin, PluginsMap};
-
 use chrono::prelude::Utc;
 use serde::Serialize;
 use sys_metrics::{cpu::*, disks::*, host::*, memory::*, network::*};
@@ -20,7 +18,6 @@ pub struct Data {
     pub swap: Option<Swap>,
     pub ionets: Option<Vec<IoNet>>,
     pub created_at: chrono::NaiveDateTime,
-    pub plugins: Vec<Plugin>,
 }
 
 impl Default for Data {
@@ -52,7 +49,6 @@ impl Default for Data {
             swap: None,
             ionets: None,
             created_at: Utc::now().naive_local(),
-            plugins: Vec::new(),
         }
     }
 }
@@ -134,39 +130,5 @@ impl Data {
         };
         // Set the time at which this has been created
         self.created_at = eat_data_time;
-    }
-
-    /// Get each plugins metrics and "save" them in the Data struct
-    pub fn eat_plugins(&mut self, plugins: &PluginsMap) {
-        trace!("eat_plugins: {:?}", Utc::now().naive_local());
-        // For each plugins, get their result and append to the Data
-        for (key, val) in plugins {
-            // Execute the entrypoint and get the return of it
-            let res = match (val.func)() {
-                Ok(res_func) => {
-                    debug!("PLUGIN {} returned: {:?}", key, res_func);
-                    res_func
-                }
-                Err(err) => {
-                    error!("PLUGIN {} failed with: {}", key, err);
-                    continue;
-                }
-            };
-            // Add the plugin data to the Data struct
-            self.add_plugin(Plugin {
-                key: key.to_owned(),
-                val: res,
-            });
-        }
-    }
-
-    /// Add Plugin struct (key/val) to the plugins field of Data
-    pub fn add_plugin(&mut self, plugin: Plugin) {
-        self.plugins.push(plugin);
-    }
-
-    /// Clear previous Plugin struct from the plugins field of Data
-    pub fn clear_plugins(&mut self) {
-        self.plugins.clear();
     }
 }

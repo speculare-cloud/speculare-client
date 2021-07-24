@@ -8,7 +8,7 @@ pub fn configure() {
         std::env::set_var(
             "RUST_LOG",
             if cfg!(debug_assertions) {
-                "trace"
+                "info,speculare_client=trace"
             } else {
                 "warn"
             },

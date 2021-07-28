@@ -2,7 +2,6 @@
 extern crate log;
 
 mod harvest;
-mod logger;
 
 use config::*;
 use harvest::data_harvest::Data;
@@ -22,6 +21,26 @@ pub struct InnerConfig {
     pub harvest_interval: u64,
     pub syncing_interval: u64,
     pub loadavg_interval: u64,
+}
+
+/// Init the logger (env_logger) and define the debug level
+/// based on debug or release build.
+fn configure_logger() {
+    // Check if the RUST_LOG already exist in the sys
+    if std::env::var_os("RUST_LOG").is_none() {
+        // if it doesn't, assign a default value to RUST_LOG
+        // Define RUST_LOG as trace for debug and error for prod
+        std::env::set_var(
+            "RUST_LOG",
+            if cfg!(debug_assertions) {
+                "info,speculare_client=trace"
+            } else {
+                "warn"
+            },
+        );
+    }
+    // Init the logger
+    env_logger::init();
 }
 
 /// Generate the Hyper Client needed for the sync requests
@@ -56,7 +75,7 @@ fn build_request(
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Init the logger and set the debug level correctly
-    logger::configure();
+    configure_logger();
 
     // Get arguments
     let args: Vec<String> = std::env::args().collect();

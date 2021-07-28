@@ -2,17 +2,14 @@
 extern crate log;
 
 mod harvest;
+mod request;
 
 use config::*;
 use harvest::data_harvest::Data;
-use hyper::{Body, Client, Method, Request};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
-use std::{
-    io::{Error, ErrorKind},
-    thread,
-    time::Duration,
-};
+use std::{path::Path, thread, time::Duration};
+
+use crate::request::{build_client, build_request};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct InnerConfig {
@@ -43,32 +40,6 @@ fn configure_logger() {
     env_logger::init();
 }
 
-/// Generate the Hyper Client needed for the sync requests
-fn build_client() -> Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-    // Create a Https "client" to be used in the Hyper Client
-    let https_conn = hyper_rustls::HttpsConnector::with_native_roots();
-    // Create a single Client instance for the app
-    Client::builder().build::<_, hyper::Body>(https_conn)
-}
-
-/// Generate the Request to be sent by the Hyper Client
-fn build_request(
-    api_url: &str,
-    token: &str,
-    data_cache: &[Data],
-) -> Result<hyper::Request<hyper::Body>, Error> {
-    match Request::builder()
-        .method(Method::POST)
-        .uri(api_url)
-        .header("content-type", "application/json")
-        .header("SPTK", token)
-        .body(Body::from(serde_json::to_string(data_cache).unwrap()))
-    {
-        Ok(req) => Ok(req),
-        Err(err_req) => Err(Error::new(ErrorKind::Other, err_req)),
-    }
-}
-
 /// Entrypoint which start the process and loop indefinietly.
 ///
 /// No other way to stop it than killing the process (for now).
@@ -92,16 +63,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load the configuration from the file passed as param
     let mut config = Config::default();
     config.merge(File::from(Path::new(&args[1]))).unwrap();
-
-    // Get the config structure
+    // Convert the config (.toml) to the InnerConfig struct
     let config: InnerConfig = config.try_into().unwrap();
 
-    // Build the client instance (HTTP client)
+    // Build the client instance (HTTP.S client)
     let client = build_client();
 
-    // Int keeping track of the sending status
-    let mut sync_track: i64 = -1;
-    let mut load_track: i64 = -1;
+    // Int keeping track of the sending status & load (if we should gather loadavg)
+    let (mut sync_track, mut load_track): (i64, i64) = (-1, -1);
 
     // Compute after how many harvest_interval the data has to be sent, and loadavg gathered
     let sync_threshold = (config.harvest_interval * config.syncing_interval) as i64;
@@ -110,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get the default Data instance
     let mut data: Data = Data::default();
 
-    // Syncing memory cache
+    // Syncing memory cache (min 16 items)
     let cache_size = std::cmp::max(sync_threshold, 16);
     let mut data_cache: Vec<Data> = Vec::with_capacity(cache_size as usize);
     info!("data_cache with size = {} spaces", cache_size);
@@ -143,18 +112,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             trace!("request is ready to be sent");
 
             // Execute the request
-            trace!("sending POST request");
             match client.request(request.unwrap()).await {
                 Ok(resp_body) => {
-                    trace!("the POST request resulted in {:?}", resp_body);
+                    trace!("the request resulted in {:?}", resp_body);
                     // If no error, clear the data_cache
                     data_cache.clear();
-                    trace!("data_cache has cleared");
+                    trace!("data_cache has been cleared");
                     // Reset the tracking counter
                     sync_track = 0;
                 }
                 Err(hyper_err) => {
-                    error!("the POST request resulted in {:?}", hyper_err);
+                    error!("the request resulted in {:?}", hyper_err);
                     // If data_cache contains too many items due to previous error
                     if data_cache.len() as i64 >= cache_size * 2 {
                         // drain the first (older) items to avoid taking too much memory

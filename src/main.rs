@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Verify if we have the correct number of arguments
     if args.len() != 2 {
         println!(
-            "speculare-client: too {} arguments\n❯ speculare-client \"path/to/Config.toml\"",
+            "speculare-client: too {} arguments: missing a \"path/to/Config.toml\"",
             if args.len() > 2 { "many" } else { "few" }
         );
         std::process::exit(1);

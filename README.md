@@ -34,7 +34,8 @@ You can find latest versioned archives [here](https://github.com/Martichou/specu
 You can also find debug build in the CI'artifacts [here](https://github.com/speculare-cloud/speculare-client/actions/workflows/ci.yml).
 
 ### Configurations
-Speculare Client need a config file (see Example.toml for example). You can save it anywhere, you just have to specify it's path to speculare-client when launching it.
+Speculare Client need a config file (see Config.example.toml for example). You can save it anywhere, 
+you just have to specify it's path to speculare-client when launching it.
 ```bash
 $ speculare-client "/path/to/Config.toml"
 ```

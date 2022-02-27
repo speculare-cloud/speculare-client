@@ -23,18 +23,21 @@ pub struct Data {
 impl Default for Data {
     fn default() -> Self {
         trace!("Init the default Data");
-        let host_info = get_host_info()
-            .unwrap_or_else(|err| panic!("Cannot get host_info of the host:{}", err));
+        let host_info = match get_host_info() {
+            Ok(info) => info,
+            Err(e) => {
+                error!("cannot get the host_info(): {}", e);
+                std::process::exit(1);
+            }
+        };
 
         // UUID can still be empty on some Linux platform (such as WSL)
         // as per https://man7.org/linux/man-pages/man5/machine-id.5.html
         // the machine-id should never be shared on the network or other.
-        let uuid = sha1::Sha1::from(match get_uuid() {
-            Ok(value) => value,
-            Err(_) => host_info.hostname.clone(),
-        })
-        .digest()
-        .to_string();
+        let uuid = match get_uuid() {
+            Ok(uuid) => sha1_smol::Sha1::from(&uuid).hexdigest(),
+            Err(_) => sha1_smol::Sha1::from(&host_info.hostname).hexdigest(),
+        };
 
         Data {
             uuid,
@@ -62,8 +65,14 @@ impl Data {
         trace!("eat_data: {:?}", eat_data_time);
 
         // Get the main host information (os, hostname, ...)
-        let host_info = get_host_info()
-            .unwrap_or_else(|err| panic!("Cannot get host_info of the host:{}", err));
+        let host_info = match get_host_info() {
+            Ok(info) => info,
+            Err(e) => {
+                error!("cannot get the host_info(): {}", e);
+                // TODO - Do we want to make this fatal?
+                return;
+            }
+        };
         // Assign self value to the value from host_info
         // Convert to i64, cause as of now the server doesn't handle u64
         self.uptime = host_info.uptime as i64;

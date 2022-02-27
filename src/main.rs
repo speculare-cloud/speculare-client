@@ -1,43 +1,36 @@
 #[macro_use]
 extern crate log;
 
+use crate::request::{build_client, build_request};
+use crate::utils::config::Config;
+
+use clap::Parser;
+use clap_verbosity_flag::InfoLevel;
+use harvest::data_harvest::Data;
+use std::{ffi::OsStr, path::Path, thread, time::Duration};
+
 mod harvest;
 mod request;
+mod utils;
 
-use config::*;
-use harvest::data_harvest::Data;
-use serde::{Deserialize, Serialize};
-use std::{path::Path, thread, time::Duration};
+#[derive(Parser, Debug)]
+#[clap(author, version, about)]
+struct Args {
+    #[clap(short = 'c', long = "config")]
+    config_path: Option<String>,
 
-use crate::request::{build_client, build_request};
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct InnerConfig {
-    pub api_token: String,
-    pub api_url: String,
-    pub harvest_interval: u64,
-    pub syncing_interval: u64,
-    pub loadavg_interval: u64,
+    #[clap(flatten)]
+    verbose: clap_verbosity_flag::Verbosity<InfoLevel>,
 }
 
-/// Init the logger (env_logger) and define the debug level
-/// based on debug or release build.
-fn configure_logger() {
-    // Check if the RUST_LOG already exist in the sys
-    if std::env::var_os("RUST_LOG").is_none() {
-        // if it doesn't, assign a default value to RUST_LOG
-        // Define RUST_LOG as trace for debug and error for prod
-        std::env::set_var(
-            "RUST_LOG",
-            if cfg!(debug_assertions) {
-                "info,speculare_client=trace"
-            } else {
-                "warn"
-            },
-        );
-    }
-    // Init the logger
-    env_logger::init();
+fn prog() -> Option<String> {
+    std::env::args()
+        .next()
+        .as_ref()
+        .map(Path::new)
+        .and_then(Path::file_name)
+        .and_then(OsStr::to_str)
+        .map(String::from)
 }
 
 /// Entrypoint which start the process and loop indefinietly.
@@ -45,26 +38,23 @@ fn configure_logger() {
 /// No other way to stop it than killing the process (for now).
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Init the logger and set the debug level correctly
-    configure_logger();
+    let args = Args::parse();
 
-    // Get arguments
-    let args: Vec<String> = std::env::args().collect();
+    // Init logger
+    env_logger::Builder::new()
+        .filter_module(
+            &prog().map_or_else(|| "speculare_client".to_owned(), |f| f.replace('-', "_")),
+            args.verbose.log_level_filter(),
+        )
+        .init();
 
-    // Verify if we have the correct number of arguments
-    if args.len() != 2 {
-        println!(
-            "speculare-client: too {} arguments: missing a \"path/to/Config.toml\"",
-            if args.len() > 2 { "many" } else { "few" }
-        );
-        std::process::exit(1);
-    }
-
-    // Load the configuration from the file passed as param
-    let mut config = Config::default();
-    config.merge(File::from(Path::new(&args[1]))).unwrap();
-    // Convert the config (.toml) to the InnerConfig struct
-    let config: InnerConfig = config.try_into().unwrap();
+    let config = match Config::new() {
+        Ok(config) => config,
+        Err(e) => {
+            error!("Cannot build the Config: {}", e);
+            std::process::exit(1);
+        }
+    };
 
     // Build the client instance (HTTP.S client)
     let client = build_client();
@@ -122,7 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     sync_track = 0;
                 }
                 Err(hyper_err) => {
-                    error!("the request resulted in {:?}", hyper_err);
+                    error!("request: error: {}", hyper_err);
                     // If data_cache contains too many items due to previous error
                     if data_cache.len() as i64 >= cache_size * 2 {
                         // drain the first (older) items to avoid taking too much memory
@@ -139,7 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // => Doing so doesn't guaratee that we'll gather values every config.harvest_interval
         // due to the time we take to gather data and send it over the network.
         // Gathering and sending is not async so it's more like (time_to_gather_&_send + config.harvest_interval).
-        thread::sleep(Duration::from_secs(config.harvest_interval));
+        thread::sleep(Duration::from_secs(config.harvest_interval.into()));
     }
 
     Ok(())

@@ -6,7 +6,11 @@ use std::io::{Error, ErrorKind};
 /// Generate the Hyper Client needed for the sync requests
 pub fn build_client() -> Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
     // Create a Https "client" to be used in the Hyper Client
-    let https_conn = hyper_rustls::HttpsConnector::with_native_roots();
+    let https_conn = hyper_rustls::HttpsConnectorBuilder::new()
+        .with_native_roots()
+        .https_or_http()
+        .enable_http2()
+        .build();
     // Create a single Client instance for the app
     Client::builder().build::<_, hyper::Body>(https_conn)
 }

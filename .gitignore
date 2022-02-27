@@ -1,4 +1,3 @@
 /target
-*.memo
-Config.toml
+client.config
 *.lock

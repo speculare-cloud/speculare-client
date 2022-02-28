@@ -26,18 +26,16 @@ $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 $ sudo apt-get install libssl-dev libpq-dev pkg-config build-essential
 ```
 
-Download
+Configurations
 --------------------------
 
-You can find latest versioned archives [here](https://github.com/Martichou/speculare-client/releases), with binaries for all platforms.
-
-You can also find debug build in the CI'artifacts [here](https://github.com/speculare-cloud/speculare-client/actions/workflows/ci.yml).
-
-### Configurations
-Speculare Client need a config file (see Config.example.toml for example). You can save it anywhere, 
+Speculare Client need a config file (see client.example.config for example). You can save it anywhere, 
 you just have to specify it's path to speculare-client when launching it.
+
+By by default speculare-client will
+try to open it at `/etc/speculare/client.config` if it's not defined in the CLI.
 ```bash
-$ speculare-client "/path/to/Config.toml"
+$ speculare-client -c "/path/to/client.config"
 ```
 
 Contributing

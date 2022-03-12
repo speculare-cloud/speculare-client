@@ -7,15 +7,21 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize, Clone)]
 
 pub struct Config {
-    // GLOBAL CONFIG
+    // ENDPOINT SETTINGS
     pub api_token: String,
     pub api_url: String,
+
+    // HARVEST INTERVALS
     #[serde(default = "default_harvest")]
-    pub harvest_interval: u8,
+    pub harvest_interval: u64,
     #[serde(default = "default_syncing")]
-    pub syncing_interval: u8,
+    pub syncing_interval: u64,
     #[serde(default = "default_loadavg")]
-    pub loadavg_interval: u8,
+    pub loadavg_interval: u64,
+
+    // GLOBAL SETTINGS
+    #[serde(default = "default_cache_size")]
+    pub cache_size: i64,
 }
 
 impl Config {
@@ -33,14 +39,18 @@ impl Config {
     }
 }
 
-fn default_harvest() -> u8 {
+fn default_harvest() -> u64 {
     1
 }
 
-fn default_syncing() -> u8 {
+fn default_syncing() -> u64 {
     1
 }
 
-fn default_loadavg() -> u8 {
+fn default_loadavg() -> u64 {
     5
+}
+
+fn default_cache_size() -> i64 {
+    16
 }

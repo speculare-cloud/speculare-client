@@ -19,6 +19,7 @@ pub fn build_client() -> Client<hyper_rustls::HttpsConnector<hyper::client::Http
 pub fn build_request(
     api_url: &str,
     token: &str,
+    uuid: &str,
     data_cache: &[Data],
 ) -> Result<hyper::Request<hyper::Body>, Error> {
     match Request::builder()
@@ -26,6 +27,7 @@ pub fn build_request(
         .uri(api_url)
         .header("content-type", "application/json")
         .header("SPTK", token)
+        .header("SP-UUID", uuid)
         .body(Body::from(simd_json::to_string(data_cache).unwrap()))
     {
         Ok(req) => Ok(req),

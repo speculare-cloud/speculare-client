@@ -74,6 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut data_cache: Vec<Data> = Vec::with_capacity(cache_size as usize);
     info!("data_cache with size = {} spaces", cache_size);
 
+    let uuid = data.uuid.clone();
     // Start the app loop (collect metrics and send them)
     loop {
         // Increment track of our syncing status
@@ -93,13 +94,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Checking if we should sync
         if sync_track % sync_threshold == 0 {
             // Building the request to be sent to the server
-            let request = match build_request(&config.api_url, &config.api_token, &data_cache) {
-                Ok(req) => req,
-                Err(e) => {
-                    error!("build_request: error: {}", e);
-                    std::process::exit(1);
-                }
-            };
+            let request =
+                match build_request(&config.api_url, &config.api_token, &uuid, &data_cache) {
+                    Ok(req) => req,
+                    Err(e) => {
+                        error!("build_request: error: {}", e);
+                        std::process::exit(1);
+                    }
+                };
 
             // Actually send the request to the server
             match client.request(request).await {

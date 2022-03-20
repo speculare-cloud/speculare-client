@@ -34,3 +34,20 @@ pub fn build_request(
         Err(err_req) => Err(Error::new(ErrorKind::Other, err_req)),
     }
 }
+
+pub fn build_update(
+    sso_url: &str,
+    token: &str,
+    uuid: &str,
+) -> Result<hyper::Request<hyper::Body>, Error> {
+    match Request::builder()
+        .method(Method::PATCH)
+        .uri(sso_url)
+        .header("SPTK", token)
+        .header("SP-UUID", uuid)
+        .body(Body::default())
+    {
+        Ok(req) => Ok(req),
+        Err(err_req) => Err(Error::new(ErrorKind::Other, err_req)),
+    }
+}

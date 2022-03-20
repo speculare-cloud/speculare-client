@@ -1,12 +1,13 @@
 #[macro_use]
 extern crate log;
 
-use crate::request::{build_client, build_request};
+use crate::request::{build_client, build_request, build_update};
 use crate::utils::config::Config;
 
 use clap::Parser;
 use clap_verbosity_flag::InfoLevel;
 use harvest::data_harvest::Data;
+use hyper::StatusCode;
 use std::{ffi::OsStr, path::Path, thread, time::Duration};
 
 mod harvest;
@@ -107,20 +108,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             match client.request(request).await {
                 Ok(resp_body) => {
                     trace!("request: response: {:?}", resp_body);
-                    // If no error, clear the data_cache
-                    data_cache.clear();
-                    trace!("data_cache has been cleared");
-                }
-                Err(hyper_err) => {
-                    error!("request: error: {}", hyper_err);
-                    // If data_cache contains too many items due to previous error
-                    if data_cache.len() as i64 >= cache_size * 2 {
-                        // drain the first (older) items to avoid taking too much memory
-                        let to_drain = cache_size / 2;
-                        data_cache.drain(0..to_drain as usize);
-                        warn!("draining [0..{}] items of the data_cache", to_drain)
+                    if resp_body.status() == StatusCode::OK {
+                        data_cache.clear();
+                        trace!("data_cache has been cleared");
+                        continue;
+                    } else if resp_body.status() == StatusCode::PRECONDITION_FAILED {
+                        warn!("The host_uuid is not defined for this key, updating...");
+                        // Post the PATCH update and if no error, continue
+                        let update = match build_update(&config.sso_url, &config.api_token, &uuid) {
+                            Ok(req) => req,
+                            Err(e) => {
+                                error!("build_update: error: {}", e);
+                                std::process::exit(1);
+                            }
+                        };
+                        // Do the call to update
+                        match client.request(update).await {
+                            Ok(resp_body) => {
+                                if resp_body.status() == StatusCode::OK {
+                                    continue;
+                                }
+                            }
+                            Err(e) => error!("request: error: cannot update host_uuid: {}", e),
+                        }
+                        continue;
                     }
                 }
+                Err(e) => error!("request: error: {}", e),
+            }
+
+            // We reach here in case of error in the client.request above
+            // If data_cache contains too many items due to previous error
+            if data_cache.len() as i64 >= cache_size * 2 {
+                // drain the first (older) items to avoid taking too much memory
+                let to_drain = cache_size / 2;
+                data_cache.drain(0..to_drain as usize);
+                warn!("draining [0..{}] items of the data_cache", to_drain)
             }
         }
 

@@ -1,5 +1,7 @@
 use crate::Args;
 
+use super::cget_uuid;
+
 use clap::Parser;
 use config::ConfigError;
 use serde::Deserialize;
@@ -7,6 +9,8 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize, Clone)]
 
 pub struct Config {
+    #[serde(skip)]
+    pub uuid: String,
     // ENDPOINT SETTINGS
     pub api_token: String,
     pub api_url: String,
@@ -36,7 +40,10 @@ impl Config {
             config::FileFormat::Toml,
         ));
 
-        config_builder.build()?.try_deserialize()
+        let mut config: Self = config_builder.build()?.try_deserialize()?;
+        config.uuid = cget_uuid();
+
+        Ok(config)
     }
 }
 

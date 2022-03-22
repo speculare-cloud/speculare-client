@@ -2,7 +2,6 @@
 extern crate log;
 
 use crate::request::{build_client, build_request, build_update};
-use crate::utils::cget_uuid;
 use crate::utils::config::Config;
 
 use clap::Parser;
@@ -23,6 +22,24 @@ struct Args {
 
     #[clap(flatten)]
     verbose: clap_verbosity_flag::Verbosity<InfoLevel>,
+}
+
+lazy_static::lazy_static! {
+    static ref CONFIG: Config = match Config::new() {
+        Ok(config) => config,
+        Err(e) => {
+            error!("Cannot build the Config: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    static ref API_URL: String = {
+        CONFIG.api_url.clone() + "?uuid=" + &CONFIG.uuid
+    };
+
+    static ref SSO_URL: String = {
+        CONFIG.sso_url.clone() + "?uuid=" + &CONFIG.uuid
+    };
 }
 
 fn prog() -> Option<String> {
@@ -76,8 +93,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut data_cache: Vec<Data> = Vec::with_capacity(cache_size as usize);
     info!("data_cache with size = {} spaces", cache_size);
 
-    // Get the host_uuid to set in SP-UUID
-    let uuid = cget_uuid();
     // Start the app loop (collect metrics and send them)
     loop {
         // Increment track of our syncing status
@@ -97,14 +112,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Checking if we should sync
         if sync_track % sync_threshold == 0 {
             // Building the request to be sent to the server
-            let request =
-                match build_request(&config.api_url, &config.api_token, &uuid, &data_cache) {
-                    Ok(req) => req,
-                    Err(e) => {
-                        error!("build_request: error: {}", e);
-                        std::process::exit(1);
-                    }
-                };
+            let request = match build_request(&config.api_token, &data_cache) {
+                Ok(req) => req,
+                Err(e) => {
+                    error!("build_request: error: {}", e);
+                    std::process::exit(1);
+                }
+            };
 
             // Actually send the request to the server
             match client.request(request).await {
@@ -117,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     } else if resp_body.status() == StatusCode::PRECONDITION_FAILED {
                         warn!("The host_uuid is not defined for this key, updating...");
                         // Post the PATCH update and if no error, continue
-                        let update = match build_update(&config.sso_url, &config.api_token, &uuid) {
+                        let update = match build_update(&config.api_token) {
                             Ok(req) => req,
                             Err(e) => {
                                 error!("build_update: error: {}", e);

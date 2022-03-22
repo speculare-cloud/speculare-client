@@ -1,4 +1,4 @@
-use crate::harvest::data_harvest::Data;
+use crate::{harvest::data_harvest::Data, API_URL, SSO_URL};
 
 use hyper::{Body, Client, Method, Request};
 use std::io::{Error, ErrorKind};
@@ -17,17 +17,14 @@ pub fn build_client() -> Client<hyper_rustls::HttpsConnector<hyper::client::Http
 
 /// Generate the Request to be sent by the Hyper Client
 pub fn build_request(
-    api_url: &str,
     token: &str,
-    uuid: &str,
     data_cache: &[Data],
 ) -> Result<hyper::Request<hyper::Body>, Error> {
     match Request::builder()
         .method(Method::POST)
-        .uri(api_url)
+        .uri(API_URL.clone())
         .header("content-type", "application/json")
         .header("SPTK", token)
-        .header("SP-UUID", uuid)
         .body(Body::from(simd_json::to_string(data_cache).unwrap()))
     {
         Ok(req) => Ok(req),
@@ -35,16 +32,11 @@ pub fn build_request(
     }
 }
 
-pub fn build_update(
-    sso_url: &str,
-    token: &str,
-    uuid: &str,
-) -> Result<hyper::Request<hyper::Body>, Error> {
+pub fn build_update(token: &str) -> Result<hyper::Request<hyper::Body>, Error> {
     match Request::builder()
         .method(Method::PATCH)
-        .uri(sso_url)
+        .uri(SSO_URL.clone())
         .header("SPTK", token)
-        .header("SP-UUID", uuid)
         .body(Body::default())
     {
         Ok(req) => Ok(req),

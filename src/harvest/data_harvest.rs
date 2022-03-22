@@ -4,7 +4,6 @@ use sys_metrics::{cpu::*, disks::*, host::*, memory::*, network::*};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {
-    pub uuid: String,
     pub system: String,
     pub os_version: String,
     pub hostname: String,
@@ -31,16 +30,7 @@ impl Default for Data {
             }
         };
 
-        // UUID can still be empty on some Linux platform (such as WSL)
-        // as per https://man7.org/linux/man-pages/man5/machine-id.5.html
-        // the machine-id should never be shared on the network or other.
-        let uuid = match get_uuid() {
-            Ok(uuid) => sha1_smol::Sha1::from(&uuid).hexdigest(),
-            Err(_) => sha1_smol::Sha1::from(&host_info.hostname).hexdigest(),
-        };
-
         Data {
-            uuid,
             system: host_info.system,
             os_version: host_info.os_version,
             hostname: host_info.hostname,

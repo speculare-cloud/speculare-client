@@ -2,6 +2,7 @@
 extern crate log;
 
 use crate::request::{build_client, build_request, build_update};
+use crate::utils::cget_uuid;
 use crate::utils::config::Config;
 
 use clap::Parser;
@@ -75,7 +76,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut data_cache: Vec<Data> = Vec::with_capacity(cache_size as usize);
     info!("data_cache with size = {} spaces", cache_size);
 
-    let uuid = data.uuid.clone();
+    // Get the host_uuid to set in SP-UUID
+    let uuid = cget_uuid();
     // Start the app loop (collect metrics and send them)
     loop {
         // Increment track of our syncing status

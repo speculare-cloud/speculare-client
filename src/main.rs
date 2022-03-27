@@ -1,7 +1,9 @@
 #[macro_use]
 extern crate log;
 
-use crate::request::{build_client, build_request, build_update};
+#[cfg(feature = "auth")]
+use crate::request::build_update;
+use crate::request::{build_client, build_request};
 use crate::utils::config::Config;
 
 use clap::Parser;
@@ -36,7 +38,10 @@ lazy_static::lazy_static! {
     static ref API_URL: String = {
         CONFIG.api_url.clone() + "?uuid=" + &CONFIG.uuid
     };
+}
 
+#[cfg(feature = "auth")]
+lazy_static::lazy_static! {
     static ref SSO_URL: String = {
         CONFIG.sso_url.clone() + "?uuid=" + &CONFIG.uuid
     };
@@ -128,7 +133,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         data_cache.clear();
                         trace!("data_cache has been cleared");
                         continue;
-                    } else if resp_body.status() == StatusCode::PRECONDITION_FAILED {
+                    }
+                    #[cfg(feature = "auth")]
+                    if resp_body.status() == StatusCode::PRECONDITION_FAILED {
                         warn!("The host_uuid is not defined for this key, updating...");
                         // Post the PATCH update and if no error, continue
                         let update = match build_update(&config.api_token) {

@@ -26,6 +26,7 @@ pub struct Config {
     // GLOBAL SETTINGS
     #[serde(default = "default_cache_size")]
     pub cache_size: i64,
+    #[cfg(feature = "auth")]
     pub sso_url: String,
 }
 

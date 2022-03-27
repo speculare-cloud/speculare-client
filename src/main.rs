@@ -125,6 +125,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             };
 
+            let mut should_drain = false;
             // Actually send the request to the server
             match client.request(request).await {
                 Ok(resp_body) => {
@@ -132,8 +133,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if resp_body.status() == StatusCode::OK {
                         data_cache.clear();
                         trace!("data_cache has been cleared");
-                        continue;
                     }
+
                     #[cfg(feature = "auth")]
                     if resp_body.status() == StatusCode::PRECONDITION_FAILED {
                         warn!("The host_uuid is not defined for this key, updating...");
@@ -147,22 +148,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         };
                         // Do the call to update
                         match client.request(update).await {
-                            Ok(resp_body) => {
-                                if resp_body.status() == StatusCode::OK {
-                                    continue;
-                                }
-                            }
+                            Ok(_) => {}
                             Err(e) => error!("request: error: cannot update host_uuid: {}", e),
                         }
-                        continue;
+
+                        should_drain = true;
                     }
                 }
-                Err(e) => error!("request: error: {}", e),
+                Err(e) => {
+                    error!("request: error: {}", e);
+                    should_drain = true;
+                }
             }
 
             // We reach here in case of error in the client.request above
             // If data_cache contains too many items due to previous error
-            if data_cache.len() as i64 >= cache_size * 2 {
+            if should_drain && data_cache.len() as i64 >= cache_size * 2 {
                 // drain the first (older) items to avoid taking too much memory
                 let to_drain = cache_size / 2;
                 data_cache.drain(0..to_drain as usize);

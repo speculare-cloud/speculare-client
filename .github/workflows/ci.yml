@@ -16,7 +16,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: rustfmt
+          components: rustfmt, clippy
           profile: minimal
           override: true
       - name: cargo fmt -- --check
@@ -24,11 +24,16 @@ jobs:
         with:
           command: fmt
           args: -- --check
+      - name: Check with Clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features --all --tests
 
   build:
     name: ${{ matrix.name }}
     needs: [style]
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         name:
@@ -36,6 +41,7 @@ jobs:
           - macOS / stable
         include:
           - name: linux / stable
+            os: ubuntu-latest
           - name: macOS / stable
             os: macOS-latest
     steps:
@@ -44,14 +50,13 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{ matrix.rust || 'stable' }}
           profile: minimal
+          toolchain: stable
           override: true
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: ${{ matrix.features }}
       - name: Test
         uses: actions-rs/cargo@v1
         with:

@@ -36,6 +36,7 @@ lazy_static::lazy_static! {
     };
 
     static ref API_URL: String = {
+        info!("API_URL: {}", CONFIG.api_url.clone() + "?uuid=" + &CONFIG.uuid);
         CONFIG.api_url.clone() + "?uuid=" + &CONFIG.uuid
     };
 }
@@ -43,6 +44,7 @@ lazy_static::lazy_static! {
 #[cfg(feature = "auth")]
 lazy_static::lazy_static! {
     static ref SSO_URL: String = {
+        info!("SSO_URL: {}", CONFIG.sso_url.clone() + "?uuid=" + &CONFIG.uuid);
         CONFIG.sso_url.clone() + "?uuid=" + &CONFIG.uuid
     };
 }

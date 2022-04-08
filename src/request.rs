@@ -39,6 +39,7 @@ pub fn build_update(token: &str) -> Result<hyper::Request<hyper::Body>, Error> {
     match Request::builder()
         .method(Method::PATCH)
         .uri(SSO_URL.clone())
+        .header("content-type", "application/json")
         .header("SPTK", token)
         .body(Body::default())
     {

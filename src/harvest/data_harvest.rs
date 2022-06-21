@@ -24,8 +24,8 @@ impl Default for Data {
         trace!("Init the default Data");
         let host_info = match get_host_info() {
             Ok(info) => info,
-            Err(e) => {
-                error!("cannot get the host_info(): {}", e);
+            Err(err) => {
+                error!("cannot get the host_info(): {}", err);
                 std::process::exit(1);
             }
         };
@@ -57,8 +57,8 @@ impl Data {
         // Get the main host information (os, hostname, ...)
         let host_info = match get_host_info() {
             Ok(info) => info,
-            Err(e) => {
-                error!("cannot get the host_info(): {}", e);
+            Err(err) => {
+                error!("cannot get the host_info(): {}", err);
                 // TODO - Do we want to make this fatal?
                 return;
             }

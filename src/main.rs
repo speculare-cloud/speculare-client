@@ -29,8 +29,8 @@ struct Args {
 lazy_static::lazy_static! {
     static ref CONFIG: Config = match Config::new() {
         Ok(config) => config,
-        Err(e) => {
-            error!("Cannot build the Config: {}", e);
+        Err(err) => {
+            error!("Cannot build the Config: {}", err);
             std::process::exit(1);
         }
     };
@@ -76,8 +76,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = match Config::new() {
         Ok(config) => config,
-        Err(e) => {
-            error!("Cannot build the Config: {}", e);
+        Err(err) => {
+            error!("Cannot build the Config: {}", err);
             std::process::exit(1);
         }
     };
@@ -121,8 +121,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Building the request to be sent to the server
             let request = match build_request(&config.api_token, &data_cache) {
                 Ok(req) => req,
-                Err(e) => {
-                    error!("build_request: error: {}", e);
+                Err(err) => {
+                    error!("build_request: error: {}", err);
                     std::process::exit(1);
                 }
             };
@@ -143,18 +143,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Post the PATCH update and if no error, continue
                         let update = match build_update(&config.api_token) {
                             Ok(req) => req,
-                            Err(e) => {
-                                error!("build_update: error: {}", e);
+                            Err(err) => {
+                                error!("build_update: error: {}", err);
                                 std::process::exit(1);
                             }
                         };
                         // Do the call to update
                         match client.request(update).await {
                             Ok(_) => {}
-                            Err(e) => error!("request: error: cannot update host_uuid: {}", e),
+                            Err(err) => error!("request: error: cannot update host_uuid: {}", err),
                         }
 
-                        should_drain = true;
+                        // Retry to send the request, but we need to rebuild it first...
+                        // We don't care if this fail, this is simply a means to push asap
+                        // the failed data.
+                        if let Ok(request) = build_request(&config.api_token, &data_cache) {
+                            match client.request(request).await {
+                                Ok(resp_body) => {
+                                    if resp_body.status() == StatusCode::OK {
+                                        data_cache.clear();
+                                        trace!("data_cache has been cleared");
+                                    }
+                                }
+                                Err(_) => {
+                                    should_drain = true;
+                                }
+                            }
+                        }
                     }
                 }
                 Err(e) => {

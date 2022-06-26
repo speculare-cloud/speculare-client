@@ -135,6 +135,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if resp_body.status() == StatusCode::OK {
                         data_cache.clear();
                         trace!("data_cache has been cleared");
+                    } else {
+                        should_drain = true;
                     }
 
                     #[cfg(feature = "auth")]
@@ -158,15 +160,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // We don't care if this fail, this is simply a means to push asap
                         // the failed data.
                         if let Ok(request) = build_request(&config.api_token, &data_cache) {
-                            match client.request(request).await {
-                                Ok(resp_body) => {
-                                    if resp_body.status() == StatusCode::OK {
-                                        data_cache.clear();
-                                        trace!("data_cache has been cleared");
-                                    }
-                                }
-                                Err(_) => {
-                                    should_drain = true;
+                            if let Ok(resp_body) = client.request(request).await {
+                                if resp_body.status() == StatusCode::OK {
+                                    data_cache.clear();
+                                    should_drain = false;
+                                    trace!("data_cache has been cleared");
                                 }
                             }
                         }

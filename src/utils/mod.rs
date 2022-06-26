@@ -1,6 +1,7 @@
 use sys_metrics::host::{get_host_info, get_uuid};
 
 pub mod config;
+pub mod request;
 
 pub fn cget_uuid() -> String {
     // UUID can still be empty on some Linux platform (such as WSL)

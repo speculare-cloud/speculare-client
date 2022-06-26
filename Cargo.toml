@@ -7,6 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-recursion = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 config = "0.13"
 clap = { version = "3.1", features = ["derive"] }
@@ -24,7 +25,7 @@ sys_metrics = { git = "https://github.com/Martichou/sys_metrics" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["auth"]
+default = []
 auth = []
 
 [profile.release]

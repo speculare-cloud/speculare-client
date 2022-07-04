@@ -93,12 +93,13 @@ impl SpClient {
 
         match self.client.request(request).await {
             Ok(resp) => {
-                trace!("request: response: {:?}", resp);
-
+                trace!("request: response: {}", resp.status());
                 if resp.status() == StatusCode::OK {
                     self.data_cache.clear();
                     #[cfg(feature = "auth")]
                     return;
+                } else {
+                    trace!("request: full response: {:?}", resp);
                 }
 
                 #[cfg(feature = "auth")]
@@ -122,7 +123,11 @@ impl SpClient {
     }
 
     pub async fn serve(&mut self) -> std::io::Result<()> {
+        let config_interval: Duration = Duration::from_secs(CONFIG.harvest_interval);
+
         loop {
+            let start = std::time::Instant::now();
+
             self.sync_track += 1;
 
             self.harvest_data();
@@ -133,6 +138,7 @@ impl SpClient {
 
             self.enforce_cache_limit();
 
+            let duration = start.elapsed();
             // Wait config.harvest_interval before running again
             // For syncing interval must be greater or equals to the harvest_interval
             // so just base this sleep on the harvest_interval value.
@@ -140,7 +146,20 @@ impl SpClient {
             // Doing so doesn't guarantee that we'll gather values every config.harvest_interval
             // due to the time we take to gather data and send it over the network.
             // Gathering and sending is not async so it's more like (time_to_gather_&_send + config.harvest_interval).
-            thread::sleep(Duration::from_secs(CONFIG.harvest_interval));
+            if duration < config_interval {
+                trace!(
+                    "Sleeping: {:?} because execution took: {:?} vs {:?}",
+                    config_interval - duration,
+                    config_interval,
+                    duration
+                );
+                thread::sleep(config_interval - duration);
+            } else {
+                warn!(
+                    "Skipping sleep as execution took longer than config_interval ({:?})",
+                    duration
+                );
+            }
         }
     }
 }

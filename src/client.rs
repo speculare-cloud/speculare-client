@@ -126,7 +126,7 @@ impl SpClient {
         let config_interval: Duration = Duration::from_secs(CONFIG.harvest_interval);
 
         loop {
-            let start = std::time::Instant::now();
+            let start_overall = std::time::Instant::now();
 
             self.sync_track += 1;
 
@@ -138,7 +138,7 @@ impl SpClient {
 
             self.enforce_cache_limit();
 
-            let duration = start.elapsed();
+            let duration_overall = start_overall.elapsed();
             // Wait config.harvest_interval before running again
             // For syncing interval must be greater or equals to the harvest_interval
             // so just base this sleep on the harvest_interval value.
@@ -146,18 +146,18 @@ impl SpClient {
             // Doing so doesn't guarantee that we'll gather values every config.harvest_interval
             // due to the time we take to gather data and send it over the network.
             // Gathering and sending is not async so it's more like (time_to_gather_&_send + config.harvest_interval).
-            if duration < config_interval {
+            if duration_overall < config_interval {
                 trace!(
                     "Sleeping: {:?} because execution took: {:?} vs {:?}",
-                    config_interval - duration,
-                    config_interval,
-                    duration
+                    config_interval - duration_overall,
+                    duration_overall,
+                    config_interval
                 );
-                thread::sleep(config_interval - duration);
+                thread::sleep(config_interval - duration_overall);
             } else {
                 warn!(
                     "Skipping sleep as execution took longer than config_interval ({:?})",
-                    duration
+                    duration_overall
                 );
             }
         }

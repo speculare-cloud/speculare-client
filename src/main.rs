@@ -62,15 +62,20 @@ fn prog() -> Option<String> {
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
 
-    // Init logger
-    env_logger::Builder::new()
-        .filter_module(
-            &prog().map_or_else(|| "speculare_client".to_owned(), |f| f.replace('-', "_")),
-            args.verbose.log_level_filter(),
+    // Define log level
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var(
+            "RUST_LOG",
+            format!(
+                "{}={level}",
+                &prog().map_or_else(|| "speculare_client".to_owned(), |f| f.replace('-', "_")),
+                level = args.verbose.log_level_filter()
+            ),
         )
-        .init();
+    }
 
-    let mut sp_client = SpClient::default();
+    // Init logger/tracing
+    tracing_subscriber::fmt::init();
 
-    sp_client.serve().await
+    SpClient::default().serve().await
 }

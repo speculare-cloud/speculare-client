@@ -6,6 +6,7 @@ use crate::utils::config::Config;
 
 use clap::Parser;
 use clap_verbosity_flag::InfoLevel;
+use once_cell::sync::Lazy;
 use std::{ffi::OsStr, path::Path};
 
 mod client;
@@ -22,28 +23,30 @@ struct Args {
     verbose: clap_verbosity_flag::Verbosity<InfoLevel>,
 }
 
-lazy_static::lazy_static! {
-    static ref CONFIG: Config = match Config::new() {
-        Ok(config) => config,
-        Err(err) => {
-            error!("Cannot build the Config: {}", err);
-            std::process::exit(1);
-        }
-    };
+static CONFIG: Lazy<Config> = Lazy::new(|| match Config::new() {
+    Ok(config) => config,
+    Err(err) => {
+        error!("Cannot build the Config: {}", err);
+        std::process::exit(1);
+    }
+});
 
-    static ref API_URL: String = {
-        info!("API_URL: {}", CONFIG.api_url.clone() + "?uuid=" + &CONFIG.uuid);
+static API_URL: Lazy<String> = Lazy::new(|| {
+    info!(
+        "API_URL: {}",
         CONFIG.api_url.clone() + "?uuid=" + &CONFIG.uuid
-    };
-}
+    );
+    CONFIG.api_url.clone() + "?uuid=" + &CONFIG.uuid
+});
 
 #[cfg(feature = "auth")]
-lazy_static::lazy_static! {
-    static ref SSO_URL: String = {
-        info!("SSO_URL: {}", CONFIG.sso_url.clone() + "?uuid=" + &CONFIG.uuid);
+static SSO_URL: Lazy<String> = Lazy::new(|| {
+    info!(
+        "SSO_URL: {}",
         CONFIG.sso_url.clone() + "?uuid=" + &CONFIG.uuid
-    };
-}
+    );
+    CONFIG.sso_url.clone() + "?uuid=" + &CONFIG.uuid
+});
 
 fn prog() -> Option<String> {
     std::env::args()

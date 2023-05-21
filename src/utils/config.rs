@@ -44,6 +44,10 @@ impl Config {
         let mut config: Self = config_builder.build()?.try_deserialize()?;
         config.uuid = cget_uuid();
 
+        assert!(config.harvest_interval > 0);
+        assert!(config.syncing_interval > 0);
+        assert!(config.loadavg_interval > 0);
+
         Ok(config)
     }
 }

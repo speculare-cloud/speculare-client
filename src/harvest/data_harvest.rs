@@ -2,12 +2,15 @@ use chrono::prelude::Utc;
 use serde::Serialize;
 use sys_metrics::{cpu::*, disks::*, host::*, memory::*, network::*};
 
+use crate::CONFIG;
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Data {
     pub system: String,
     pub os_version: String,
     pub hostname: String,
     pub uptime: i64,
+    pub sync_interval: i64,
     pub cpu_stats: Option<CpuStats>,
     pub cpu_times: Option<CpuTimes>,
     pub load_avg: Option<LoadAvg>,
@@ -35,6 +38,7 @@ impl Default for Data {
             os_version: host_info.os_version,
             hostname: host_info.hostname,
             uptime: 0,
+            sync_interval: -1,
             cpu_stats: None,
             cpu_times: None,
             load_avg: None,
@@ -53,6 +57,12 @@ impl Data {
     pub fn eat_data(&mut self, load_avg: bool) {
         let eat_data_time = Utc::now().naive_local();
         trace!("eat_data: {:?}", eat_data_time);
+
+        // Set the sync interval to the same as to when (how often)
+        // we publish them.
+        if self.sync_interval == -1 {
+            self.sync_interval = (CONFIG.harvest_interval * CONFIG.syncing_interval) as i64;
+        }
 
         // Get the main host information (os, hostname, ...)
         let host_info = match get_host_info() {

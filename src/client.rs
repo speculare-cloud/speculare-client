@@ -118,7 +118,7 @@ impl SpClient {
         let request = self.prepare_request();
 
         let future = self.client.request(request);
-        match timeout(Duration::from_secs(5), future).await {
+        match timeout(Duration::from_secs(25), future).await {
             Ok(v) => {
                 match v {
                     Ok(r) => self.handle_response(r).await,

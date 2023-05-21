@@ -5,10 +5,11 @@ use crate::CONFIG;
 use crate::{harvest::Data, utils::request::build_request};
 
 use async_recursion::async_recursion;
-use hyper::StatusCode;
 use hyper::{client::HttpConnector, Client};
+use hyper::{Body, Response, StatusCode};
 use hyper_rustls::HttpsConnector;
 use std::{thread, time::Duration};
+use tokio::time::timeout;
 
 pub struct SpClient {
     client: Client<HttpsConnector<HttpConnector>>,
@@ -87,39 +88,45 @@ impl SpClient {
         }
     }
 
+    async fn handle_response(&mut self, resp: Response<Body>) {
+        trace!("request: response: {}", resp.status());
+        if resp.status() == StatusCode::OK {
+            self.data_cache.clear();
+            #[cfg(feature = "auth")]
+            return;
+        } else {
+            trace!("request: full response: {:?}", resp);
+        }
+
+        #[cfg(feature = "auth")]
+        if resp.status() == StatusCode::PRECONDITION_FAILED {
+            warn!("The host_uuid is not defined for this key, updating...");
+            let update = self.prepare_update();
+
+            if let Err(err) = self.client.request(update).await {
+                error!("request: error: cannot update host_uuid: {}", err);
+            }
+
+            // Republish the data now that the host is registered
+            // on the auth server (thanks to prepare_update)
+            self.publish_data().await;
+        }
+    }
+
     #[async_recursion]
     async fn publish_data(&mut self) {
         let request = self.prepare_request();
 
-        match self.client.request(request).await {
-            Ok(resp) => {
-                trace!("request: response: {}", resp.status());
-                if resp.status() == StatusCode::OK {
-                    self.data_cache.clear();
-                    #[cfg(feature = "auth")]
-                    return;
-                } else {
-                    trace!("request: full response: {:?}", resp);
-                }
-
-                #[cfg(feature = "auth")]
-                if resp.status() == StatusCode::PRECONDITION_FAILED {
-                    warn!("The host_uuid is not defined for this key, updating...");
-                    let update = self.prepare_update();
-
-                    if let Err(err) = self.client.request(update).await {
-                        error!("request: error: cannot update host_uuid: {}", err);
-                    }
-
-                    // Republish the data now that the host is registered
-                    // on the auth server (thanks to prepare_update)
-                    self.publish_data().await;
-                }
+        let future = self.client.request(request);
+        match timeout(Duration::from_secs(5), future).await {
+            Ok(v) => {
+                match v {
+                    Ok(r) => self.handle_response(r).await,
+                    Err(err) => error!("request: error: {}", err),
+                };
             }
-            Err(err) => {
-                error!("request: error: {}", err);
-            }
-        }
+            Err(_) => error!("request: error: timed out"),
+        };
     }
 
     pub async fn serve(&mut self) -> std::io::Result<()> {

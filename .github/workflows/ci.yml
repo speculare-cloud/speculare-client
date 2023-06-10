@@ -12,6 +12,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
@@ -19,11 +20,13 @@ jobs:
           components: rustfmt, clippy
           profile: minimal
           override: true
+
       - name: cargo fmt -- --check
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: -- --check
+
       - name: Check with Clippy
         uses: actions-rs/clippy-check@v1
         with:
@@ -47,16 +50,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
           override: true
+
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
+
       - name: Test
         uses: actions-rs/cargo@v1
         with:

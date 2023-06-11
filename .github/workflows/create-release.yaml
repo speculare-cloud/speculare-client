@@ -15,5 +15,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          draft: true
           generate_release_notes: true

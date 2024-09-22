@@ -39,7 +39,6 @@ static API_URL: Lazy<String> = Lazy::new(|| {
     CONFIG.api_url.clone() + "?uuid=" + &CONFIG.uuid
 });
 
-#[cfg(feature = "auth")]
 static SSO_URL: Lazy<String> = Lazy::new(|| {
     info!(
         "SSO_URL: {}",

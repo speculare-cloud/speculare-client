@@ -1,4 +1,3 @@
-#[cfg(feature = "auth")]
 use crate::SSO_URL;
 use crate::{harvest::data_harvest::Data, API_URL};
 
@@ -34,7 +33,6 @@ pub fn build_request(
     }
 }
 
-#[cfg(feature = "auth")]
 pub fn build_update(token: &str) -> Result<hyper::Request<hyper::Body>, Error> {
     match Request::builder()
         .method(Method::PATCH)

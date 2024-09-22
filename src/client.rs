@@ -1,5 +1,4 @@
 use crate::utils::request::build_client;
-#[cfg(feature = "auth")]
 use crate::utils::request::build_update;
 use crate::CONFIG;
 use crate::{harvest::Data, utils::request::build_request};
@@ -77,7 +76,6 @@ impl SpClient {
         }
     }
 
-    #[cfg(feature = "auth")]
     fn prepare_update(&self) -> hyper::Request<hyper::Body> {
         match build_update(&CONFIG.api_token) {
             Ok(req) => req,
@@ -92,13 +90,11 @@ impl SpClient {
         trace!("request: response: {}", resp.status());
         if resp.status() == StatusCode::OK {
             self.data_cache.clear();
-            #[cfg(feature = "auth")]
             return;
         } else {
             trace!("request: full response: {:?}", resp);
         }
 
-        #[cfg(feature = "auth")]
         if resp.status() == StatusCode::PRECONDITION_FAILED {
             warn!("The host_uuid is not defined for this key, updating...");
             let update = self.prepare_update();
